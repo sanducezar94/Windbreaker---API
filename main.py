@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 import bcrypt
 import datetime
 from sqlalchemy.sql.sqltypes import DateTime
-from waitress import serve
+#from waitress import serve
 
 
 CONSTANTS = {
