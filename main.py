@@ -4,18 +4,19 @@ import falcon
 import jwt
 import logging
 import base64
-from sqlalchemy import create_engine, Column, Integer, Text, Numeric, String, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, Text, Numeric, String, ForeignKey, DateTime
 import sqlalchemy as db
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import bcrypt
 import datetime
-from sqlalchemy.sql.sqltypes import DateTime
-#from waitress import serve
+from sqlalchemy.sql.sqltypes import Date, DateTime
+from sqlalchemy.sql import text
+from waitress import serve
 
 
 CONSTANTS = {
-    'SECRET': 's#sec3rt',
+    'SECRET': '663b257e283a4fda873e4523d98d9326',
     'CRED_SECRET': 'sagasaga',
     "ALGORITHM": 'HS256'
 }
@@ -26,24 +27,39 @@ logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler('bike_logs.log')
 fh.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fh.setFormatter(formatter)
 logger.addHandler(fh)
 
 
 base = declarative_base()
 
+
 def verify_token(auth):
-    return True
     auth_exp = auth.split(' ') if auth is not None else (None, None)
 
-    if auth_exp[0].lower() == 'basic':
-        token = base64.b64decode(auth_exp[1]).decode('utf-8')
-        
-        try:
-            return jwt.decode(token, CONSTANTS['SECRET'])
-        except:
-            raise jwt.DecodeError()
+    try:
+        if auth_exp is (None, None):
+            raise jwt.MissingRequiredClaimError()
+
+        if auth_exp[0].lower() == 'bearer':
+            try:
+                return jwt.decode(auth_exp[1], CONSTANTS['SECRET'], CONSTANTS["ALGORITHM"])
+            except:
+                raise jwt.DecodeError()
+    except(Exception) as e:
+        raise jwt.DecodeError()
+
+
+def generate_user_token(user):
+    expToken = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+    expTokenInt = int(expToken.timestamp())
+    token = jwt.encode({
+        'user': user.name,
+        'exp': expTokenInt,
+    }, CONSTANTS['SECRET'], CONSTANTS["ALGORITHM"])
+    return token
 
 
 class User(base):
@@ -69,8 +85,9 @@ class Comment(base):
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     text = Column('text', String(128))
-    user_id = Column('user_id', Integer, ForeignKey('user.id'))
-    route_id = Column('post_id', Integer, ForeignKey('route.id'))
+    user_id = Column('user', String(80), ForeignKey('user.name'))
+    route_id = Column('route_id', Integer, ForeignKey('route.id'))
+    created_on = Column('created_on', DateTime)
     parent = relationship("Route", back_populates="comments")
 
 
@@ -79,26 +96,8 @@ client = create_engine(
 base.metadata.create_all(bind=client)
 session = sessionmaker(bind=client)
 
-print('TEST')
-def generate_user_token(user):
-    expToken = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-    expTokenInt = int(expToken.timestamp())
-    token = jwt.encode({
-        'username': user.email,
-        'exp': expTokenInt,
-        'iat': int(datetime.datetime.utcnow().timestamp())
-    }, CONSTANTS['SECRET'])
-    return token
-
 
 class AuthClass:
-    def on_post(self, req, resp):
-        try:
-            data = req.media
-
-        except(Exception):
-            raise falcon.HTTPInternalServerError
-
     def on_post_sign_up(self, req, resp):
         try:
             data = req.media
@@ -146,7 +145,8 @@ class AuthClass:
                     resp.body = 'Utilizatorul nu exista.'
                     resp.status = falcon.HTTP_400
                 elif bcrypt.checkpw(password, user.password.encode('utf-8')):
-                    resp.body = generate_user_token(user)
+                    resp.body = json.dumps(
+                        {'token': generate_user_token(user), 'user': user.name})
                     resp.status = falcon.HTTP_202  # 202 = Accepted
                 else:
                     resp.body = 'Datele de autentificare sunt gresite.'
@@ -161,17 +161,26 @@ class CommentClass:
         try:
             auth = verify_token(req.auth)
 
-            data = req.media()
+            data = req.media
             comment = Comment()
-            comment.user_id = auth["user_id"]
+            comment.user_id = auth["user"]
             comment.text = data["text"]
-            comment.route_id = data["route_id"]
+            comment.route_id = int(data["route_id"])
+            created_on = datetime.datetime.utcnow()
+            comment.created_on = created_on
+
+            id = 0
 
             s = session()
             s.add(comment)
+            s.flush()
+
+            id = comment.id
+
+            s.commit()
             s.close()
 
-            resp.body = 'Posted'
+            resp.body = json.dumps({"id": id, "text": data["text"], "user": auth["user"], "route_id": int(data["route_id"])})
             resp.status = falcon.HTTP_201
 
         except(Exception) as e:
@@ -180,12 +189,25 @@ class CommentClass:
 
     def on_get(self, req, resp):
         try:
-            auth = verify_token(req.auth)
+            verify_token(req.auth)
 
-            data = req.params.items()
-            s = session()
-            comments = s.query(Comment).filter(Comment.route_id == 1).paginate(0, data["per_page"], error_out=False)
-            s.close()
+            data = req.params
+
+            route_id = data["route_id"]
+            page = data["page"]
+
+            with client.connect() as con:
+                comments = con.execute("SELECT * FROM public.comment WHERE route_id = " +
+                                       route_id + " ORDER BY created_on DESC LIMIT 10 OFFSET " + page + " * 10;")
+
+            comment_list = []
+
+            for row in comments:
+                comment_list.append(
+                    {"id": row["id"], "text": row["text"], "user": row["user"], "route_id": row["route_id"]})
+
+            resp.body = json.dumps({"page": page, "comments": comment_list})
+            resp.status = falcon.HTTP_200
 
         except(Exception) as e:
             resp.body = 'Failed'
