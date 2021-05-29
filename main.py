@@ -1,6 +1,7 @@
 from enum import auto
 import json
 import falcon
+from falcon.status_codes import HTTP_200, HTTP_400
 import jwt
 import logging
 import base64
@@ -12,14 +13,12 @@ import bcrypt
 import datetime
 from sqlalchemy.sql.sqltypes import Date, DateTime
 from sqlalchemy.sql import text
-from waitress import serve
+from sys import platform
+from constants import CONSTANTS
 
+if platform == "win32":
+    from waitress import serve
 
-CONSTANTS = {
-    'SECRET': '663b257e283a4fda873e4523d98d9326',
-    'CRED_SECRET': 'sagasaga',
-    "ALGORITHM": 'HS256'
-}
 
 logger = logging.getLogger('bike_log')
 logger.setLevel(logging.DEBUG)
@@ -76,7 +75,12 @@ class Route(base):
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     name = Column('name', String(80))
-    rating = Column('rating', Numeric)
+    rating = Column('rating', Numeric, default=0, nullable=False)
+    one_star = Column('onestar', Integer, default=0, nullable=False)
+    two_star = Column('twostar', Integer, default=0, nullable=False)
+    three_star = Column('threestar', Integer, default=0, nullable=False)
+    four_star = Column('fourstar', Integer, default=0, nullable=False)
+    five_star = Column('fivestar', Integer, default=0, nullable=False)
     comments = relationship("Comment", back_populates="parent")
 
 
@@ -92,7 +96,7 @@ class Comment(base):
 
 
 client = create_engine(
-    'postgresql://postgres:Markerlel20@localhost/bikeroutes', echo=True)
+    'postgresql://' + CONSTANTS["DBUSER"] + ":" + CONSTANTS["DBPASS"] + '@localhost/bikeroutes', echo=True)
 base.metadata.create_all(bind=client)
 session = sessionmaker(bind=client)
 
@@ -123,6 +127,7 @@ class AuthClass:
                 resp.status = falcon.HTTP_400
 
         except(Exception) as e:
+            logger.log("Auth Post: " + e)
             resp.body = json.dumps({'message': e.message})
             resp.status = falcon.HTTP_500
 
@@ -145,6 +150,7 @@ class AuthClass:
                     resp.body = 'Utilizatorul nu exista.'
                     resp.status = falcon.HTTP_400
                 elif bcrypt.checkpw(password, user.password.encode('utf-8')):
+                    test = generate_user_token(user)
                     resp.body = json.dumps(
                         {'token': generate_user_token(user), 'user': user.name})
                     resp.status = falcon.HTTP_202  # 202 = Accepted
@@ -153,8 +159,9 @@ class AuthClass:
                     resp.status = falcon.HTTP_400
 
         except(Exception) as e:
-            print(e.message)
-
+            logger.log("Auth get: " + e)
+            resp.body = 'Probleme la autentificare.'
+            resp.status = falcon.HTTP_400
 
 class CommentClass:
     def on_post(self, req, resp):
@@ -176,7 +183,6 @@ class CommentClass:
             s.flush()
 
             id = comment.id
-
             s.commit()
             s.close()
 
@@ -184,7 +190,8 @@ class CommentClass:
             resp.status = falcon.HTTP_201
 
         except(Exception) as e:
-            resp.body = 'Failed'
+            resp.body = 'Comentariul nu a putut fi postat.'
+            logger.log("Comment post: " + e)
             resp.status = falcon.HTTP_400
 
     def on_get(self, req, resp):
@@ -210,13 +217,72 @@ class CommentClass:
             resp.status = falcon.HTTP_200
 
         except(Exception) as e:
+            logger.log("Comment get: " + e)
             resp.body = 'Failed'
             resp.status = falcon.HTTP_400
 
+class RouteClass():
+    def on_post(self, req, resp):
+        try:
+            verify_token(req.auth)
 
-api = falcon.API()
-api.add_route('/auth', AuthClass())
-api.add_route('/auth/sign_up', AuthClass(), suffix='sign_up')
-api.add_route('/comment', CommentClass())
+            data = req.media
 
-serve(api, listen='0.0.0.0:8080')
+            route_id = int(data["route_id"])
+            rating = int(data["rating"])
+
+            s = session()
+            route = s.query(Route).filter(Route.id == route_id).first()
+
+            if rating == 1:
+                route.one_star += 1
+            if rating == 2:
+                route.two_star += 1
+            if rating == 3:
+                route.three_star += 1
+            if rating == 4:
+                route.four_star += 1
+            if rating == 5:
+                route.five_star += 1
+
+            rating = (route.one_star + route.two_star * 2 + route.three_star * 3 + route.four_star * 4 + route.five_star * 5) / (route.one_star + route.two_star + route.three_star + route.four_star + route.five_star)
+            route.rating = rating
+            s.commit()
+            s.close()
+
+            resp.status = falcon.HTTP_200
+            resp.body = json.dumps({"rating": rating})
+        except(Exception) as e:
+            logger.log("Route post: " + e)
+            resp.body = 'Failed'
+            resp.status = falcon.HTTP_400
+
+    def on_get(self, req, resp):
+        try:
+            verify_token(req.auth)
+
+            data = req.params
+            route_id = int(data["route_id"])
+
+            s = session()
+            route = s.query(Route).filter(Route.id == route_id).first()
+            s.close()
+
+            resp.status = HTTP_200
+            resp.body = json.dumps({"route": route.name, "rating": float(route.rating)})
+        except(Exception) as e:
+            resp.status = HTTP_400
+            resp.body = 'Failed'
+            logger.log('Route post: ' + e)
+
+
+
+
+app = falcon.API()
+app.add_route('/auth', AuthClass())
+app.add_route('/auth/sign_up', AuthClass(), suffix='sign_up')
+app.add_route('/comment', CommentClass())
+app.add_route('/route', RouteClass())
+
+if platform == "win32":
+    serve(app, listen='0.0.0.0:8080')
