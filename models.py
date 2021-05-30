@@ -14,8 +14,8 @@ class User(base):
     name = Column('name', String(80), unique=True)
     email = Column('email', String(128),  unique=True)
     password = Column('password', String(128))
-    rated_routes = relationship('UserRatedRoutes', lazy='joined', back_populates='user_parent')
-    rated_comments = relationship('UserRatedComments', lazy='joined', back_populates='user_parent')
+    rated_routes = relationship('UserRatedRoute', lazy='joined', back_populates='user_parent')
+    rated_comments = relationship('UserRatedComment', lazy='joined', back_populates='user_parent')
 
 
 class Route(base):
@@ -31,7 +31,7 @@ class Route(base):
     five_star = Column('fivestar', Integer, default=0, nullable=False)
     comments = relationship("Comment", back_populates="route_parent")
 
-class UserRatedRoutes(base):
+class UserRatedRoute(base):
     __tablename__ = "userratedroute"
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
@@ -39,7 +39,7 @@ class UserRatedRoutes(base):
     route_id = Column('route_id', Integer, ForeignKey('route.id', ondelete="CASCADE"))
     user_parent = relationship('User', back_populates='rated_routes')
 
-class UserRatedComments(base):
+class UserRatedComment(base):
     __tablename__ = "userratedcomment"
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     user_id = Column('user_id', Integer, ForeignKey('user.id', ondelete="CASCADE"))
@@ -53,5 +53,6 @@ class Comment(base):
     text = Column('text', String(128))
     user_id = Column('user', String(80), ForeignKey('user.name', ondelete="CASCADE"))
     route_id = Column('route_id', Integer, ForeignKey('route.id', ondelete="CASCADE"))
+    rating = Column('rating', Integer)
     created_on = Column('created_on', DateTime)
     route_parent = relationship("Route", back_populates="comments")

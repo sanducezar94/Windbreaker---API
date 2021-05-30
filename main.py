@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from models import User, Route, Comment, UserRatedRoutes, UserRatedComments, base
+from models import User, Route, Comment, UserRatedRoute, UserRatedComment, base
 from sqlalchemy.orm import sessionmaker
 import bcrypt, datetime, logging, json, falcon, jwt, base64
 from sys import platform
@@ -38,10 +38,11 @@ def verify_token(auth):
 
 
 def generate_user_token(user):
-    expToken = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+    expToken = datetime.datetime.utcnow()# + datetime.timedelta(hours=24)
     expTokenInt = int(expToken.timestamp())
     token = jwt.encode({
         'user': user.name,
+        'user_id': user.id,
         'exp': expTokenInt,
     }, CONSTANTS['SECRET'], CONSTANTS["ALGORITHM"])
     return token
@@ -126,6 +127,21 @@ class AuthClass:
             resp.status = falcon.HTTP_400
 
 class CommentClass:
+    def on_post_rate(self, req, resp):
+        try:
+            auth = verify_token(req.auth)
+            data = req.media
+
+            comment_id = int(data["comment_id"])
+            rating = int(data["rating"])
+
+            s = session()
+            commentRate = s.query(UserRatedComment).where(UserRatedComment.id == auth["id"]).first()
+            s.query(Comment).filter(Comment.id == comment_id).update({})
+            s.update(Comment).where
+        except(Exception) as e:
+            resp.body = falcon.HTTP_400
+
     def on_post(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -186,16 +202,19 @@ class CommentClass:
 class RouteClass():
     def on_post(self, req, resp):
         try:
-            verify_token(req.auth)
+            token = verify_token(req.auth)
 
             data = req.media
 
             route_id = int(data["route_id"])
             rating = int(data["rating"])
 
+            routeRating = UserRatedRoute()
+            routeRating.user_id = token["user_id"]
+            routeRating.route_id = route_id
+
             s = session()
             route = s.query(Route).filter(Route.id == route_id).first()
-
             if rating == 1:
                 route.one_star += 1
             if rating == 2:
@@ -209,6 +228,7 @@ class RouteClass():
 
             rating = (route.one_star + route.two_star * 2 + route.three_star * 3 + route.four_star * 4 + route.five_star * 5) / (route.one_star + route.two_star + route.three_star + route.four_star + route.five_star)
             route.rating = rating
+            s.add(routeRating)
             s.commit()
             s.close()
 
@@ -230,10 +250,10 @@ class RouteClass():
             route = s.query(Route).filter(Route.id == route_id).first()
             s.close()
 
-            resp.status = HTTP_200
+            resp.status = falcon.HTTP_200
             resp.body = json.dumps({"route": route.name, "rating": float(route.rating)})
         except(Exception) as e:
-            resp.status = HTTP_400
+            resp.status = falcon.HTTP_400
             resp.body = 'Failed'
             logger.log('Route post: ' + e)
 
@@ -244,6 +264,7 @@ app = falcon.API()
 app.add_route('/auth', AuthClass())
 app.add_route('/auth/sign_up', AuthClass(), suffix='sign_up')
 app.add_route('/comment', CommentClass())
+app.add_route('/comment/rate', CommentClass(), suffix='rate')
 app.add_route('/route', RouteClass())
 
 if platform == "win32":
