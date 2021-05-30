@@ -1,18 +1,7 @@
-from enum import auto
-import json
-import falcon
-from falcon.status_codes import HTTP_200, HTTP_400
-import jwt
-import logging
-import base64
-from sqlalchemy import create_engine, Column, Integer, Text, Numeric, String, ForeignKey, DateTime
-import sqlalchemy as db
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
-import bcrypt
-import datetime
-from sqlalchemy.sql.sqltypes import Date, DateTime
-from sqlalchemy.sql import text
+from sqlalchemy import create_engine
+from models import User, Route, Comment, UserRatedRoutes, UserRatedComments, base
+from sqlalchemy.orm import sessionmaker
+import bcrypt, datetime, logging, json, falcon, jwt, base64
 from sys import platform
 from constants import CONSTANTS
 
@@ -30,9 +19,6 @@ formatter = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fh.setFormatter(formatter)
 logger.addHandler(fh)
-
-
-base = declarative_base()
 
 
 def verify_token(auth):
@@ -61,42 +47,10 @@ def generate_user_token(user):
     return token
 
 
-class User(base):
-    __tablename__ = "user"
-
-    id = Column('id', Integer, primary_key=True, autoincrement=True)
-    name = Column('name', String(80), unique=True)
-    email = Column('email', String(128),  unique=True)
-    password = Column('password', String(128))
-
-
-class Route(base):
-    __tablename__ = "route"
-
-    id = Column('id', Integer, primary_key=True, autoincrement=True)
-    name = Column('name', String(80))
-    rating = Column('rating', Numeric, default=0, nullable=False)
-    one_star = Column('onestar', Integer, default=0, nullable=False)
-    two_star = Column('twostar', Integer, default=0, nullable=False)
-    three_star = Column('threestar', Integer, default=0, nullable=False)
-    four_star = Column('fourstar', Integer, default=0, nullable=False)
-    five_star = Column('fivestar', Integer, default=0, nullable=False)
-    comments = relationship("Comment", back_populates="parent")
-
-
-class Comment(base):
-    __tablename__ = "comment"
-
-    id = Column('id', Integer, primary_key=True, autoincrement=True)
-    text = Column('text', String(128))
-    user_id = Column('user', String(80), ForeignKey('user.name'))
-    route_id = Column('route_id', Integer, ForeignKey('route.id'))
-    created_on = Column('created_on', DateTime)
-    parent = relationship("Route", back_populates="comments")
-
+host = 'localhost' if platform == 'win32' else 'localhost:5432'
 
 client = create_engine(
-    'postgresql://' + CONSTANTS["DBUSER"] + ":" + CONSTANTS["DBPASS"] + '@localhost/bikeroutes', echo=True)
+    'postgresql://' + CONSTANTS["DBUSER"] + ":" + CONSTANTS["DBPASS"] + '@' + host + '/bikeroutes', echo=True)
 base.metadata.create_all(bind=client)
 session = sessionmaker(bind=client)
 
@@ -146,13 +100,21 @@ class AuthClass:
                 user = s.query(User).filter(User.email == username).first()
                 s.close()
 
-                if user is None:
+                if user == None:
                     resp.body = 'Utilizatorul nu exista.'
                     resp.status = falcon.HTTP_400
                 elif bcrypt.checkpw(password, user.password.encode('utf-8')):
-                    test = generate_user_token(user)
+                    rated_routes = []
+                    rated_comments = []
+
+                    for route in user.rated_routes:
+                        rated_routes.append(route.id)
+                    
+                    for comment in user.rated_comments:
+                        rated_comments.append(comment.id)
+
                     resp.body = json.dumps(
-                        {'token': generate_user_token(user), 'user': user.name})
+                        {'token': generate_user_token(user), 'user': user.name, 'rated_routes': rated_routes, 'rated_comments': rated_comments})
                     resp.status = falcon.HTTP_202  # 202 = Accepted
                 else:
                     resp.body = 'Datele de autentificare sunt gresite.'
