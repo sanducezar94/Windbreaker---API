@@ -1,7 +1,14 @@
 from sqlalchemy import create_engine
+from sqlalchemy.sql.expression import desc
 from models import User, Route, Comment, UserRatedRoute, UserRatedComment, base
 from sqlalchemy.orm import sessionmaker
-import bcrypt, datetime, logging, json, falcon, jwt, base64
+import bcrypt
+import datetime
+import logging
+import json
+import falcon
+import jwt
+import base64
 from sys import platform
 from constants import CONSTANTS
 
@@ -38,7 +45,7 @@ def verify_token(auth):
 
 
 def generate_user_token(user):
-    expToken = datetime.datetime.utcnow()# + datetime.timedelta(hours=24)
+    expToken = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
     expTokenInt = int(expToken.timestamp())
     token = jwt.encode({
         'user': user.name,
@@ -82,7 +89,7 @@ class AuthClass:
                 resp.status = falcon.HTTP_400
 
         except(Exception) as e:
-            logger.log("Auth Post: " + e)
+            logger.error("Auth Post: " + str(e))
             resp.body = json.dumps({'message': e.message})
             resp.status = falcon.HTTP_500
 
@@ -110,21 +117,23 @@ class AuthClass:
 
                     for route in user.rated_routes:
                         rated_routes.append(route.id)
-                    
+
                     for comment in user.rated_comments:
                         rated_comments.append(comment.id)
 
+                    token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
                     resp.body = json.dumps(
-                        {'token': generate_user_token(user), 'user': user.name, 'rated_routes': rated_routes, 'rated_comments': rated_comments})
+                        {'token': token, 'user': user.name, 'rated_routes': rated_routes, 'rated_comments': rated_comments})
                     resp.status = falcon.HTTP_202  # 202 = Accepted
                 else:
                     resp.body = 'Datele de autentificare sunt gresite.'
                     resp.status = falcon.HTTP_400
 
         except(Exception) as e:
-            logger.log("Auth get: " + e)
+            logger.error("Auth get: " + str(e))
             resp.body = 'Probleme la autentificare.'
             resp.status = falcon.HTTP_400
+
 
 class CommentClass:
     def on_post_rate(self, req, resp):
@@ -133,14 +142,30 @@ class CommentClass:
             data = req.media
 
             comment_id = int(data["comment_id"])
-            rating = int(data["rating"])
 
             s = session()
-            commentRate = s.query(UserRatedComment).where(UserRatedComment.id == auth["id"]).first()
-            s.query(Comment).filter(Comment.id == comment_id).update({})
-            s.update(Comment).where
+            commentRate = s.query(UserRatedComment).filter(
+                UserRatedComment.id == auth["id"]).first()
+
+            comment = s.query(Comment).filter(Comment.id == comment_id).first()
+
+            if commentRate is None:
+                comment.rating += 1
+                newCommentRate = UserRatedComment()
+                newCommentRate.user_id = auth["user_id"]
+                newCommentRate.comment_id = comment_id
+                s.add(newCommentRate)
+            else:
+                comment.rating -= 1
+
+            s.commit()
+            s.close()
+
+            resp.status = falcon.HTTP_200
         except(Exception) as e:
-            resp.body = falcon.HTTP_400
+            resp.body = 'Comentariul nu a putut fi postat.'
+            logger.error("Comment rate: " + str(e))
+            resp.status = falcon.HTTP_400
 
     def on_post(self, req, resp):
         try:
@@ -154,8 +179,6 @@ class CommentClass:
             created_on = datetime.datetime.utcnow()
             comment.created_on = created_on
 
-            id = 0
-
             s = session()
             s.add(comment)
             s.flush()
@@ -164,26 +187,36 @@ class CommentClass:
             s.commit()
             s.close()
 
-            resp.body = json.dumps({"id": id, "text": data["text"], "user": auth["user"], "route_id": int(data["route_id"])})
+            resp.body = json.dumps(
+                {"id": id, "text": data["text"], "user": auth["user"], "route_id": int(data["route_id"])})
             resp.status = falcon.HTTP_201
 
         except(Exception) as e:
             resp.body = 'Comentariul nu a putut fi postat.'
-            logger.log("Comment post: " + e)
+            logger.error("Comment post: " + str(e))
             resp.status = falcon.HTTP_400
 
-    def on_get(self, req, resp):
+
+class RouteClass():
+    def on_get_data_with_comments(self, req, resp):
         try:
             verify_token(req.auth)
-
             data = req.params
 
-            route_id = data["route_id"]
-            page = data["page"]
+            route_id = int(data["route_id"])
+            page = int(data["page"])
+
+            if page < 0 or route_id < 0 or route_id > 25:
+                raise falcon.HTTPBadRequest(
+                    title="Params out of range",
+                    description="Invalid data, possible threat."
+                )
 
             with client.connect() as con:
                 comments = con.execute("SELECT * FROM public.comment WHERE route_id = " +
                                        route_id + " ORDER BY created_on DESC LIMIT 10 OFFSET " + page + " * 10;")
+                rating = con.execute(
+                    "SELECT rating FROM public.route WHERE id = " + route_id)
 
             comment_list = []
 
@@ -191,18 +224,19 @@ class CommentClass:
                 comment_list.append(
                     {"id": row["id"], "text": row["text"], "user": row["user"], "route_id": row["route_id"]})
 
-            resp.body = json.dumps({"page": page, "comments": comment_list})
-            resp.status = falcon.HTTP_200
+            strRating = str(rating.first()[0])
 
+            resp.body = json.dumps(
+                {"page": page, "comments": comment_list, "rating": strRating})
+            resp.status = falcon.HTTP_200
         except(Exception) as e:
-            logger.log("Comment get: " + e)
-            resp.body = 'Failed'
+            resp.body = 'Comentariul nu a putut fi postat.'
+            logger.error("Comment post: " + str(e))
             resp.status = falcon.HTTP_400
 
-class RouteClass():
     def on_post(self, req, resp):
         try:
-            token = verify_token(req.auth)
+            auth = verify_token(req.auth)
 
             data = req.media
 
@@ -210,10 +244,18 @@ class RouteClass():
             rating = int(data["rating"])
 
             routeRating = UserRatedRoute()
-            routeRating.user_id = token["user_id"]
+            routeRating.user_id = auth["user_id"]
             routeRating.route_id = route_id
 
             s = session()
+
+            dbRouteRating = s.query(UserRatedRoute).filter(
+                UserRatedRoute.user_id == auth["user_id"]).first()
+
+            if dbRouteRating is not None:
+                raise falcon.HTTPBadRequest(title="User already voted", description="User" +
+                                            str(auth["user_id"]) + " already voted for route: " + str(data["route_id"]))
+
             route = s.query(Route).filter(Route.id == route_id).first()
             if rating == 1:
                 route.one_star += 1
@@ -226,7 +268,8 @@ class RouteClass():
             if rating == 5:
                 route.five_star += 1
 
-            rating = (route.one_star + route.two_star * 2 + route.three_star * 3 + route.four_star * 4 + route.five_star * 5) / (route.one_star + route.two_star + route.three_star + route.four_star + route.five_star)
+            rating = (route.one_star + route.two_star * 2 + route.three_star * 3 + route.four_star * 4 + route.five_star *
+                      5) / (route.one_star + route.two_star + route.three_star + route.four_star + route.five_star)
             route.rating = rating
             s.add(routeRating)
             s.commit()
@@ -235,7 +278,7 @@ class RouteClass():
             resp.status = falcon.HTTP_200
             resp.body = json.dumps({"rating": rating})
         except(Exception) as e:
-            logger.log("Route post: " + e)
+            logger.error("Route post: " + str(e))
             resp.body = 'Failed'
             resp.status = falcon.HTTP_400
 
@@ -251,13 +294,12 @@ class RouteClass():
             s.close()
 
             resp.status = falcon.HTTP_200
-            resp.body = json.dumps({"route": route.name, "rating": float(route.rating)})
+            resp.body = json.dumps(
+                {"route": route.name, "rating": float(route.rating)})
         except(Exception) as e:
             resp.status = falcon.HTTP_400
             resp.body = 'Failed'
-            logger.log('Route post: ' + e)
-
-
+            logger.error('Route post: ' + str(e))
 
 
 app = falcon.API()
@@ -266,6 +308,8 @@ app.add_route('/auth/sign_up', AuthClass(), suffix='sign_up')
 app.add_route('/comment', CommentClass())
 app.add_route('/comment/rate', CommentClass(), suffix='rate')
 app.add_route('/route', RouteClass())
+app.add_route('/route/data_with_comments', RouteClass(), suffix='data_with_comments')
+
 
 if platform == "win32":
     serve(app, listen='0.0.0.0:8080')

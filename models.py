@@ -1,6 +1,5 @@
 from sqlalchemy.sql.sqltypes import DateTime
-from sqlalchemy.sql import text
-from sqlalchemy import Column, Integer, Text, Numeric, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, Numeric, String, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -23,7 +22,7 @@ class Route(base):
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     name = Column('name', String(80))
-    rating = Column('rating', Numeric, default=0, nullable=False)
+    rating = Column('rating', Numeric(2), default=0, nullable=False)
     one_star = Column('onestar', Integer, default=0, nullable=False)
     two_star = Column('twostar', Integer, default=0, nullable=False)
     three_star = Column('threestar', Integer, default=0, nullable=False)
@@ -42,6 +41,7 @@ class UserRatedRoute(base):
 class UserRatedComment(base):
     __tablename__ = "userratedcomment"
     id = Column('id', Integer, primary_key=True, autoincrement=True)
+    rating = Column('rating', Integer)
     user_id = Column('user_id', Integer, ForeignKey('user.id', ondelete="CASCADE"))
     comment_id = Column('comment_id', Integer, ForeignKey('comment.id', ondelete="CASCADE"))
     user_parent = relationship('User', back_populates='rated_comments')
