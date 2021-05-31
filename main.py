@@ -136,6 +136,38 @@ class AuthClass:
 
 
 class CommentClass:
+    def on_get(self, req, resp):
+        try:
+            verify_token(req.auth)
+            data = req.params
+
+            route_id = int(data["route_id"])
+            page = int(data["page"])
+
+            if page < 0 or route_id < 0 or route_id > 25:
+                raise falcon.HTTPBadRequest(
+                    title="Params out of range",
+                    description="Invalid data, possible threat."
+                )
+
+            with client.connect() as con:
+                comments = con.execute("SELECT * FROM public.comment WHERE route_id = " +
+                                       str(route_id) + " ORDER BY created_on DESC LIMIT 10 OFFSET " + str(page) + " * 10;")
+
+            comment_list = []
+
+            for row in comments:
+                comment_list.append(
+                    {"id": row["id"], "text": row["text"], "user": row["user"], "route_id": row["route_id"]})
+
+            resp.body = json.dumps(
+                {"page": page, "comments": comment_list})
+            resp.status = falcon.HTTP_200
+        except(Exception) as e:
+            logger.error("Comment get: " + str(e))
+            resp.body = 'Comment can not be retrieved.'
+            resp.status = falcon.HTTP_400
+
     def on_post_rate(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -198,42 +230,6 @@ class CommentClass:
 
 
 class RouteClass():
-    def on_get_data_with_comments(self, req, resp):
-        try:
-            verify_token(req.auth)
-            data = req.params
-
-            route_id = int(data["route_id"])
-            page = int(data["page"])
-
-            if page < 0 or route_id < 0 or route_id > 25:
-                raise falcon.HTTPBadRequest(
-                    title="Params out of range",
-                    description="Invalid data, possible threat."
-                )
-
-            with client.connect() as con:
-                comments = con.execute("SELECT * FROM public.comment WHERE route_id = " +
-                                       route_id + " ORDER BY created_on DESC LIMIT 10 OFFSET " + page + " * 10;")
-                rating = con.execute(
-                    "SELECT rating FROM public.route WHERE id = " + route_id)
-
-            comment_list = []
-
-            for row in comments:
-                comment_list.append(
-                    {"id": row["id"], "text": row["text"], "user": row["user"], "route_id": row["route_id"]})
-
-            strRating = str(rating.first()[0])
-
-            resp.body = json.dumps(
-                {"page": page, "comments": comment_list, "rating": strRating})
-            resp.status = falcon.HTTP_200
-        except(Exception) as e:
-            resp.body = 'Comentariul nu a putut fi postat.'
-            logger.error("Comment post: " + str(e))
-            resp.status = falcon.HTTP_400
-
     def on_post(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -308,7 +304,6 @@ app.add_route('/auth/sign_up', AuthClass(), suffix='sign_up')
 app.add_route('/comment', CommentClass())
 app.add_route('/comment/rate', CommentClass(), suffix='rate')
 app.add_route('/route', RouteClass())
-app.add_route('/route/data_with_comments', RouteClass(), suffix='data_with_comments')
 
 
 if platform == "win32":
