@@ -1,5 +1,5 @@
 from sqlalchemy.sql.sqltypes import DateTime
-from sqlalchemy import Column, Integer, Numeric, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, Float, String, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -23,7 +23,7 @@ class Route(base):
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     name = Column('name', String(80))
-    rating = Column('rating', Numeric(2), default=0, nullable=False)
+    rating = Column('rating', Float(3), default=0, nullable=False)
     one_star = Column('onestar', Integer, default=0, nullable=False)
     two_star = Column('twostar', Integer, default=0, nullable=False)
     three_star = Column('threestar', Integer, default=0, nullable=False)

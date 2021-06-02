@@ -1,3 +1,4 @@
+import decimal
 from sqlalchemy import create_engine
 from sqlalchemy.sql.expression import desc
 from models import User, Route, Comment, UserRatedRoute, UserRatedComment, base
@@ -7,10 +8,12 @@ import datetime
 import logging
 import json
 import falcon
+import os
 import jwt
 import base64
 from sys import platform
 from constants import CONSTANTS
+from falcon import media
 
 if platform == "win32":
     from waitress import serve
@@ -62,8 +65,45 @@ client = create_engine(
 base.metadata.create_all(bind=client)
 session = sessionmaker(bind=client)
 
+def initialize():
+    try:
+        s = session()
+        routeCount = s.query(Route).count()
+        if routeCount == 0:
+            f = open('initial_data.json')
+            jsonData = json.load(f)
+
+            for data in jsonData:
+                newRoute = Route()
+                newRoute.id = data["id"]
+                newRoute.name = data["name"]
+                s.add(newRoute)
+        s.commit()
+        s.close()
+    except(Exception) as e:
+        logger.error("Problema initializing: " + str(e))
+
+initialize()
+
 
 class AuthClass:
+    def on_post(self, req, resp):
+        chunk_size = 4096
+        try:
+            name = 'sexuts.jpg'
+            image_path = 'images/sexusts.jpg'
+
+            with open(image_path, 'wb') as image_file:
+                while True:
+                    chunk = req.stream.read(chunk_size)
+                    if not chunk:
+                        break
+
+                    image_file.write(chunk)
+            
+        except(Exception) as e:
+            print(str(e))
+
     def on_post_sign_up(self, req, resp):
         try:
             data = req.media
@@ -78,8 +118,8 @@ class AuthClass:
             try:
                 s = session()
                 s.add(user)
-                token = generate_user_token(user)
                 s.commit()
+                token = generate_user_token(user)
                 s.close()
 
                 resp.body = token
@@ -246,7 +286,7 @@ class RouteClass():
             s = session()
 
             dbRouteRating = s.query(UserRatedRoute).filter(
-                UserRatedRoute.user_id == auth["user_id"]).first()
+                UserRatedRoute.user_id == auth["user_id"]).filter(UserRatedRoute.route_id == route_id).first()
 
             if dbRouteRating is not None:
                 raise falcon.HTTPBadRequest(title="User already voted", description="User" +
@@ -287,15 +327,16 @@ class RouteClass():
 
             s = session()
             route = s.query(Route).filter(Route.id == route_id).first()
+            ratingCount = route.one_star + route.two_star + route.three_star + route.four_star + route.five_star
             s.close()
 
             resp.status = falcon.HTTP_200
             resp.body = json.dumps(
-                {"route": route.name, "rating": float(route.rating)})
+                {"route": route.name, "rating": route.rating, "rating_count": ratingCount})
         except(Exception) as e:
             resp.status = falcon.HTTP_400
             resp.body = 'Failed'
-            logger.error('Route post: ' + str(e))
+            logger.error('Route get: ' + str(e))
 
 
 app = falcon.API()
