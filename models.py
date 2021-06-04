@@ -11,9 +11,10 @@ class User(base):
     __tablename__ = "user"
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
-    name = Column('name', String(80), unique=True)
+    name = Column('name', String(48), unique=True)
     email = Column('email', String(128),  unique=True)
     password = Column('password', String(128))
+    icon = Column('icon', String(60))
     rated_routes = relationship('UserRatedRoute', lazy='joined', back_populates='user_parent')
     rated_comments = relationship('UserRatedComment', lazy='joined', back_populates='user_parent')
 

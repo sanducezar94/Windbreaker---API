@@ -1,4 +1,5 @@
 import decimal
+from falcon.status_codes import HTTP_200
 from sqlalchemy import create_engine
 from sqlalchemy.sql.expression import desc
 from models import User, Route, Comment, UserRatedRoute, UserRatedComment, base
@@ -14,6 +15,7 @@ import base64
 from sys import platform
 from constants import CONSTANTS
 from falcon import media
+from falcon_multipart.middleware import MultipartMiddleware
 
 if platform == "win32":
     from waitress import serve
@@ -87,22 +89,49 @@ initialize()
 
 
 class AuthClass:
-    def on_post(self, req, resp):
-        chunk_size = 4096
+    def on_post_user_icon(self, req, resp):
         try:
-            name = 'sexuts.jpg'
-            image_path = 'images/sexusts.jpg'
+            auth = verify_token(req.auth)
+            data = req.params
+
+            chunk_size = 4096
+            image = req.get_param('file')
+            image_path = os.path.join('images', image.filename)
 
             with open(image_path, 'wb') as image_file:
                 while True:
-                    chunk = req.stream.read(chunk_size)
+                    chunk = image.file.read(chunk_size)
                     if not chunk:
                         break
 
                     image_file.write(chunk)
+
+            s = session()
+            user = s.query(User).filter(User.id == auth["user_id"]).first()
+            user.icon = image.filename
+            s.commit()
+
+            resp.status = falcon.HTTP_200
             
         except(Exception) as e:
-            print(str(e))
+            logger.error("User Icon Post: " + str(e))
+            resp.body = json.dumps({'message': e.message})
+            resp.status = falcon.HTTP_500
+
+    def on_get_user_icon(self, req, resp):
+        try:
+            #auth = verify_token(req.auth)
+            data = req.params
+
+            path = os.path.join("images", data["imagename"])
+            file_len = os.path.getsize(path)
+            resp.content_type = "image/jpg"
+            resp.set_stream(open(path, 'rb'), file_len)
+                
+        except(Exception) as e:
+            logger.error("User Icon Get: " + str(e))
+            resp.body = json.dumps({'message': e.message})
+            resp.status = falcon.HTTP_500
 
     def on_post_sign_up(self, req, resp):
         try:
@@ -178,7 +207,7 @@ class AuthClass:
 class CommentClass:
     def on_get(self, req, resp):
         try:
-            verify_token(req.auth)
+            auth = verify_token(req.auth)
             data = req.params
 
             route_id = int(data["route_id"])
@@ -191,14 +220,14 @@ class CommentClass:
                 )
 
             with client.connect() as con:
-                comments = con.execute("SELECT * FROM public.comment WHERE route_id = " +
+                comments = con.execute("SELECT *, u.icon FROM public.comment c INNER JOIN public.user u ON u.name = c.user WHERE route_id = " +
                                        str(route_id) + " ORDER BY created_on DESC LIMIT 10 OFFSET " + str(page) + " * 10;")
 
             comment_list = []
 
             for row in comments:
                 comment_list.append(
-                    {"id": row["id"], "text": row["text"], "user": row["user"], "route_id": row["route_id"]})
+                    {"id": row["id"], "icon": row["icon"], "text": row["text"], "user": row["user"], "route_id": row["route_id"]})
 
             resp.body = json.dumps(
                 {"page": page, "comments": comment_list})
@@ -339,8 +368,9 @@ class RouteClass():
             logger.error('Route get: ' + str(e))
 
 
-app = falcon.API()
+app = falcon.API(middleware=[MultipartMiddleware()])
 app.add_route('/auth', AuthClass())
+app.add_route('/auth/user_icon', AuthClass(), suffix='user_icon')
 app.add_route('/auth/sign_up', AuthClass(), suffix='sign_up')
 app.add_route('/comment', CommentClass())
 app.add_route('/comment/rate', CommentClass(), suffix='rate')
