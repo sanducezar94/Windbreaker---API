@@ -1,5 +1,5 @@
 from sqlalchemy.sql.sqltypes import DateTime
-from sqlalchemy import Column, Integer, Float, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, Float, String, ForeignKey, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -15,6 +15,7 @@ class User(base):
     email = Column('email', String(128),  unique=True)
     password = Column('password', String(128))
     icon = Column('icon', String(60))
+    is_facebook = Column('is_facebook', Boolean, default=False)
     rated_routes = relationship('UserRatedRoute', lazy='joined', back_populates='user_parent')
     rated_comments = relationship('UserRatedComment', lazy='joined', back_populates='user_parent')
 

@@ -87,8 +87,37 @@ def initialize():
 
 initialize()
 
-
 class AuthClass:
+    def on_post_facebook(self, req, resp):
+        try:
+            data = req.media
+
+            newUser = User()
+            newUser.email = data["email"]
+            newUser.name = data["user"]
+            newUser.is_facebook = True
+
+            s = session()
+
+            expToken = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            timeStamp = str(int(expToken.timestamp()))
+            hashedPassword = bcrypt.hashpw(
+            timeStamp.encode('utf-8'), bcrypt.gensalt())
+            newUser.password = hashedPassword.decode('ascii')
+
+            s.add(newUser)
+            token = generate_user_token(newUser) if platform == 'win32' else generate_user_token(newUser).decode('utf-8')
+            s.commit()
+            s.close()
+
+            resp.status = HTTP_200
+            resp.body = token
+
+        except(Exception) as e:
+            logger.error("")
+            resp.body = json.dumps({'message': e.message})
+            resp.status = falcon.HTTP_500
+
     def on_post_user_icon(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -180,7 +209,7 @@ class AuthClass:
                 if user == None:
                     resp.body = 'Utilizatorul nu exista.'
                     resp.status = falcon.HTTP_400
-                elif bcrypt.checkpw(password, user.password.encode('utf-8')):
+                elif bcrypt.checkpw(password, user.password.encode('utf-8')) or user.is_facebook == True:
                     rated_routes = []
                     rated_comments = []
 
@@ -372,6 +401,7 @@ app = falcon.API(middleware=[MultipartMiddleware()])
 app.add_route('/auth', AuthClass())
 app.add_route('/auth/user_icon', AuthClass(), suffix='user_icon')
 app.add_route('/auth/sign_up', AuthClass(), suffix='sign_up')
+app.add_route('/auth/facebook', AuthClass(), suffix='facebook')
 app.add_route('/comment', CommentClass())
 app.add_route('/comment/rate', CommentClass(), suffix='rate')
 app.add_route('/route', RouteClass())
