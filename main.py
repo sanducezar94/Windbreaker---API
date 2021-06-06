@@ -121,11 +121,14 @@ class AuthClass:
     def on_post_user_icon(self, req, resp):
         try:
             auth = verify_token(req.auth)
-            data = req.params
 
             chunk_size = 4096
             image = req.get_param('file')
-            image_path = os.path.join('images', image.filename)
+
+            if req.content_length < 5000:
+                image_path = os.path.join('images', image.filename)
+            else:
+                image_path = os.path.join('profile_images', image.filename)
 
             with open(image_path, 'wb') as image_file:
                 while True:
@@ -221,7 +224,7 @@ class AuthClass:
 
                     token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
                     resp.body = json.dumps(
-                        {'token': token, 'user': user.name, 'rated_routes': rated_routes, 'rated_comments': rated_comments})
+                        {'token': token, 'user': user.name, 'icon': user.icon, 'rated_routes': rated_routes, 'rated_comments': rated_comments})
                     resp.status = falcon.HTTP_202  # 202 = Accepted
                 else:
                     resp.body = 'Datele de autentificare sunt gresite.'
