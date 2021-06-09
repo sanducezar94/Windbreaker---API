@@ -107,11 +107,12 @@ class AuthClass:
 
             s.add(newUser)
             token = generate_user_token(newUser) if platform == 'win32' else generate_user_token(newUser).decode('utf-8')
+            id = newUser.id
             s.commit()
             s.close()
 
             resp.status = HTTP_200
-            resp.body = token
+            resp.body = {"token": token, "user_id": id}
 
         except(Exception) as e:
             logger.error("")
@@ -180,10 +181,11 @@ class AuthClass:
                 s = session()
                 s.add(user)
                 s.commit()
-                token = generate_user_token(user)
+                token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
+                id = user.id
                 s.close()
 
-                resp.body = token
+                resp.body = json.dumps({"token": token, "user_id": id})
                 resp.status = falcon.HTTP_201  # 201 = CREATED
             except(Exception) as e:
                 resp.body = 'Exista deja un cont cu acest email.'
@@ -224,7 +226,7 @@ class AuthClass:
 
                     token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
                     resp.body = json.dumps(
-                        {'token': token, 'user': user.name, 'icon': user.icon, 'rated_routes': rated_routes, 'rated_comments': rated_comments})
+                        {'token': token, "user_id": user.id, 'user': user.name, 'icon': user.icon, 'rated_routes': rated_routes, 'rated_comments': rated_comments})
                     resp.status = falcon.HTTP_202  # 202 = Accepted
                 else:
                     resp.body = 'Datele de autentificare sunt gresite.'
@@ -252,17 +254,21 @@ class CommentClass:
                 )
 
             with client.connect() as con:
-                comments = con.execute("SELECT *, u.icon FROM public.comment c INNER JOIN public.user u ON u.name = c.user WHERE route_id = " +
+                comments = con.execute("SELECT c.id, c.text, c.user, c.route_id, c.rating, c.created_on, u.icon, u.id as user_id FROM public.comment c INNER JOIN public.user u ON u.name = c.user WHERE route_id = " +
                                        str(route_id) + " ORDER BY created_on DESC LIMIT 10 OFFSET " + str(page) + " * 10;")
+                row_count = con.execute("Select COUNT(*) FROM public.comment WHERE route_id = " + str(route_id) + ";")
 
             comment_list = []
+            comment_count = 0
+            for row in row_count:
+                comment_count = row["count"]
 
             for row in comments:
                 comment_list.append(
-                    {"id": row["id"], "icon": row["icon"], "text": row["text"], "user": row["user"], "route_id": row["route_id"]})
+                    {"id": row["id"], "icon": row["icon"], "user_id": row["user_id"], "text": row["text"], "user": row["user"], "route_id": row["route_id"]})
 
             resp.body = json.dumps(
-                {"page": page, "comments": comment_list})
+                {"page": page, "comment_count": comment_count, "comments": comment_list})
             resp.status = falcon.HTTP_200
         except(Exception) as e:
             logger.error("Comment get: " + str(e))
