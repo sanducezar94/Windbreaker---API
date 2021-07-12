@@ -59,11 +59,22 @@ def generate_user_token(user):
     }, CONSTANTS['SECRET'], CONSTANTS["ALGORITHM"])
     return token
 
+def generate_guest_token():
+    expToken = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+    expTokenInt = int(expToken.timestamp())
+    token = jwt.encode({
+        'user': 'GUEST',
+        'user_id': -1,
+        'exp': expTokenInt,
+    }, CONSTANTS['SECRET'], CONSTANTS["ALGORITHM"])
+    return token
+
 
 host = 'localhost' if platform == 'win32' else 'localhost:5432'
+dbname = 'bikeroutes' if platform == 'win32' else 'fablebike'
 
 client = create_engine(
-    'postgresql://' + CONSTANTS["DBUSER"] + ":" + CONSTANTS["DBPASS"] + '@' + host + '/bikeroutes', echo=True)
+    'postgresql://' + CONSTANTS["DBUSER"] + ":" + CONSTANTS["DBPASS"] + '@' + host + '/' + dbname, echo=True)
 base.metadata.create_all(bind=client)
 session = sessionmaker(bind=client)
 
@@ -105,6 +116,11 @@ class AuthClass:
             timeStamp.encode('utf-8'), bcrypt.gensalt())
             newUser.password = hashedPassword.decode('ascii')
 
+            existingUser = s.query(User).filter(User.name == newUser.name).first()
+            if existingUser is not None:
+                raise Exception('Exista deja un cont cu acest nume.')
+
+
             s.add(newUser)
             token = generate_user_token(newUser) if platform == 'win32' else generate_user_token(newUser).decode('utf-8')
             id = newUser.id
@@ -112,11 +128,11 @@ class AuthClass:
             s.close()
 
             resp.status = HTTP_200
-            resp.body = {"token": token, "user_id": id}
+            resp.body = {"token": token, "user_id": id, "roles": "rw"}
 
         except(Exception) as e:
             logger.error("")
-            resp.body = json.dumps({'message': e.message})
+            resp.body = str(e)
             resp.status = falcon.HTTP_500
 
     def on_post_user_icon(self, req, resp):
@@ -153,7 +169,7 @@ class AuthClass:
 
     def on_get_user_icon(self, req, resp):
         try:
-            #auth = verify_token(req.auth)
+            auth = verify_token(req.auth)
             data = req.params
 
             path = os.path.join("images", data["imagename"])
@@ -179,16 +195,24 @@ class AuthClass:
 
             try:
                 s = session()
+                existingEmail = s.query(User).filter(User.email == user.email).first()
+                if existingEmail is not None:
+                    raise Exception('Exista deja un cont cu acest email.')
+                
+                existingUser = s.query(User).filter(User.name == user.name).first()
+                if existingUser is not None:
+                    raise Exception('Exista deja un cont cu acest nume.')
+
                 s.add(user)
                 s.commit()
                 token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
                 id = user.id
                 s.close()
 
-                resp.body = json.dumps({"token": token, "user_id": id})
+                resp.body = json.dumps({"token": token, "user_id": id, "roles": 'rw'})
                 resp.status = falcon.HTTP_201  # 201 = CREATED
             except(Exception) as e:
-                resp.body = 'Exista deja un cont cu acest email.'
+                resp.body = str(e)
                 resp.status = falcon.HTTP_400
 
         except(Exception) as e:
@@ -211,9 +235,13 @@ class AuthClass:
                 user = s.query(User).filter(User.email == username).first()
                 s.close()
 
-                if user == None:
+                if user == None and username != 'GUEST':
                     resp.body = 'Utilizatorul nu exista.'
                     resp.status = falcon.HTTP_400
+                elif username == 'GUEST':
+                    token = generate_guest_token() if platform == 'win32' else generate_guest_token().decode('utf-8')
+                    resp.body = json.dumps({'token': token})
+                    resp.status = falcon.HTTP_202 
                 elif bcrypt.checkpw(password, user.password.encode('utf-8')) or user.is_facebook == True:
                     rated_routes = []
                     rated_comments = []
@@ -226,7 +254,7 @@ class AuthClass:
 
                     token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
                     resp.body = json.dumps(
-                        {'token': token, "user_id": user.id, 'user': user.name, 'icon': user.icon, 'rated_routes': rated_routes, 'rated_comments': rated_comments})
+                        {'token': token, "user_id": user.id, 'user': user.name, 'icon': user.icon, 'rated_routes': rated_routes, 'rated_comments': rated_comments, 'roles': user.roles})
                     resp.status = falcon.HTTP_202  # 202 = Accepted
                 else:
                     resp.body = 'Datele de autentificare sunt gresite.'
@@ -255,7 +283,7 @@ class CommentClass:
 
             with client.connect() as con:
                 comments = con.execute("SELECT c.id, c.text, c.user, c.route_id, c.rating, c.created_on, u.icon, u.id as user_id FROM public.comment c INNER JOIN public.user u ON u.name = c.user WHERE route_id = " +
-                                       str(route_id) + " ORDER BY created_on DESC LIMIT 10 OFFSET " + str(page) + " * 10;")
+                                       str(route_id) + " ORDER BY created_on DESC LIMIT 5 OFFSET " + str(page) + " * 5;")
                 row_count = con.execute("Select COUNT(*) FROM public.comment WHERE route_id = " + str(route_id) + ";")
 
             comment_list = []
@@ -327,7 +355,7 @@ class CommentClass:
             s.close()
 
             resp.body = json.dumps(
-                {"id": id, "text": data["text"], "user": auth["user"], "route_id": int(data["route_id"])})
+                {"id": id, "text": data["text"], "user": auth["user"], "user_id": auth["user_id"], "route_id": int(data["route_id"])})
             resp.status = falcon.HTTP_201
 
         except(Exception) as e:
@@ -391,15 +419,17 @@ class RouteClass():
 
             data = req.params
             route_id = int(data["route_id"])
+            comment_count = 0
 
             s = session()
             route = s.query(Route).filter(Route.id == route_id).first()
             ratingCount = route.one_star + route.two_star + route.three_star + route.four_star + route.five_star
+            comment_count = s.query(Comment).filter(Comment.route_id == route_id).count()
             s.close()
 
             resp.status = falcon.HTTP_200
             resp.body = json.dumps(
-                {"route": route.name, "rating": route.rating, "rating_count": ratingCount})
+                {"route": route.name, "rating": route.rating, "rating_count": ratingCount, "commentCount": comment_count})
         except(Exception) as e:
             resp.status = falcon.HTTP_400
             resp.body = 'Failed'

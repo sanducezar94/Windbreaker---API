@@ -16,8 +16,12 @@ class User(base):
     password = Column('password', String(128))
     icon = Column('icon', String(60))
     is_facebook = Column('is_facebook', Boolean, default=False)
+    distance_travelled = Column('distance_travelled', Float(2))
+    routes_finished = Column('routes_finished', Integer)
+    objectives_visited = Column('objectives_finished', Integer)
     rated_routes = relationship('UserRatedRoute', lazy='joined', back_populates='user_parent')
     rated_comments = relationship('UserRatedComment', lazy='joined', back_populates='user_parent')
+    roles = Column('roles', String(12))
 
 
 class Route(base):
@@ -37,6 +41,7 @@ class UserRatedRoute(base):
     __tablename__ = "userratedroute"
 
     id = Column('id', Integer, primary_key=True, autoincrement=True)
+    rating = Column('rating', Integer)
     user_id = Column('user_id', Integer, ForeignKey('user.id', ondelete="CASCADE"))
     route_id = Column('route_id', Integer, ForeignKey('route.id', ondelete="CASCADE"))
     user_parent = relationship('User', back_populates='rated_routes')
