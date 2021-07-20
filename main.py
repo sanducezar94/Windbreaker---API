@@ -112,8 +112,7 @@ class AuthClass:
 
             expToken = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
             timeStamp = str(int(expToken.timestamp()))
-            hashedPassword = bcrypt.hashpw(
-            timeStamp.encode('utf-8'), bcrypt.gensalt())
+            hashedPassword = bcrypt.hashpw(timeStamp.encode('utf-8'), bcrypt.gensalt())
             newUser.password = hashedPassword.decode('ascii')
 
             existingUser = s.query(User).filter(User.name == newUser.name).first()
@@ -122,13 +121,13 @@ class AuthClass:
 
 
             s.add(newUser)
+            s.commit()
             token = generate_user_token(newUser) if platform == 'win32' else generate_user_token(newUser).decode('utf-8')
             id = newUser.id
-            s.commit()
             s.close()
 
             resp.status = HTTP_200
-            resp.body = {"token": token, "user_id": id, "roles": "rw"}
+            resp.body = json.dumps({"token": token, "user_id": id, "roles": "rw"})
 
         except(Exception) as e:
             logger.error("")
@@ -254,7 +253,7 @@ class AuthClass:
 
                     token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
                     resp.body = json.dumps(
-                        {'token': token, "user_id": user.id, 'user': user.name, 'icon': user.icon, 'rated_routes': rated_routes, 'rated_comments': rated_comments, 'roles': user.roles})
+                        {'token': token, "user_id": user.id, 'user': user.name, 'icon': user.icon, 'distance_travelled': user.distance_travelled, 'routes_finished': user.routes_finished, 'objectives_visited': user.objectives_visited, 'rated_routes': rated_routes, 'rated_comments': rated_comments})
                     resp.status = falcon.HTTP_202  # 202 = Accepted
                 else:
                     resp.body = 'Datele de autentificare sunt gresite.'
