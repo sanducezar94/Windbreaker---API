@@ -1,5 +1,5 @@
 import decimal
-from falcon.status_codes import HTTP_200
+from falcon.status_codes import HTTP_200, HTTP_400
 from sqlalchemy import create_engine
 from sqlalchemy.sql.expression import desc
 from models import User, Route, Comment, UserRatedRoute, UserRatedComment, base
@@ -219,6 +219,34 @@ class AuthClass:
             resp.body = json.dumps({'message': e.message})
             resp.status = falcon.HTTP_500
 
+    def on_get_persistent(self, req, resp):
+        try:
+            auth = verify_token(req.auth)
+            email = auth["user"]
+
+            s = session()
+            user = s.query(User).filter(User.email == email).first()
+            s.close()
+
+            if user == None:
+                resp.status = falcon.HTTP_401
+            else:
+                rated_routes = []
+                rated_comments = []
+
+                for route in user.rated_routes:
+                    rated_routes.append(route.id)
+
+                for comment in user.rated_comments:
+                    rated_comments.append(comment.id)
+
+                token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
+                resp.body = json.dumps(
+                    {'token': token, 'id': user.id, 'email': email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
+                resp.status = falcon.HTTP_200 
+        except(Exception) as e:
+            logger.error("Auth error")
+
     def on_get(self, req, resp):
         try:
             auth_exp = req.auth.split(
@@ -227,17 +255,17 @@ class AuthClass:
             if auth_exp[0].lower() == 'basic':
                 auth = base64.b64decode(auth_exp[1]).decode('utf-8').split(':')
 
-                username = auth[0]
+                email = auth[0]
                 password = auth[1].encode('utf-8')
 
                 s = session()
-                user = s.query(User).filter(User.email == username).first()
+                user = s.query(User).filter(User.email == email).first()
                 s.close()
 
-                if user == None and username != 'GUEST':
+                if user == None and email != 'GUEST':
                     resp.body = 'Utilizatorul nu exista.'
                     resp.status = falcon.HTTP_400
-                elif username == 'GUEST':
+                elif email == 'GUEST':
                     token = generate_guest_token() if platform == 'win32' else generate_guest_token().decode('utf-8')
                     resp.body = json.dumps({'token': token})
                     resp.status = falcon.HTTP_202 
@@ -253,7 +281,7 @@ class AuthClass:
 
                     token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
                     resp.body = json.dumps(
-                        {'token': token, "user_id": user.id, 'user': user.name, 'icon': user.icon, 'distance_travelled': user.distance_travelled, 'routes_finished': user.routes_finished, 'objectives_visited': user.objectives_visited, 'rated_routes': rated_routes, 'rated_comments': rated_comments})
+                        {'token': token, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
                     resp.status = falcon.HTTP_202  # 202 = Accepted
                 else:
                     resp.body = 'Datele de autentificare sunt gresite.'
@@ -437,6 +465,7 @@ class RouteClass():
 
 app = falcon.API(middleware=[MultipartMiddleware()])
 app.add_route('/auth', AuthClass())
+app.add_route('/auth/persistent', AuthClass(), suffix='persistent')
 app.add_route('/auth/user_icon', AuthClass(), suffix='user_icon')
 app.add_route('/auth/sign_up', AuthClass(), suffix='sign_up')
 app.add_route('/auth/facebook', AuthClass(), suffix='facebook')
