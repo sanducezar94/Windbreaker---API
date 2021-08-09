@@ -1,21 +1,15 @@
-import decimal
 from falcon.status_codes import HTTP_200, HTTP_400
 from sqlalchemy import create_engine
 from sqlalchemy.sql.expression import desc
 from models import User, Route, Comment, UserRatedRoute, UserRatedComment, base
 from sqlalchemy.orm import sessionmaker
-import bcrypt
-import datetime
-import logging
-import json
-import falcon
-import os
-import jwt
-import base64
+import bcrypt, datetime, logging, json, jwt, re, falcon, os, base64, decimal
 from sys import platform
 from constants import CONSTANTS
 from falcon import media
 from falcon_multipart.middleware import MultipartMiddleware
+from falcon_limiter import Limiter
+from falcon_limiter.utils import get_remote_addr
 
 if platform == "win32":
     from waitress import serve
@@ -31,6 +25,11 @@ formatter = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fh.setFormatter(formatter)
 logger.addHandler(fh)
+
+limiter = Limiter(
+    key_func=get_remote_addr,
+    default_limits="60 per minute, 4 per second"
+)
 
 
 def verify_token(auth):
@@ -98,7 +97,33 @@ def initialize():
 
 initialize()
 
+def validateEmail(email):
+    return re.search(r'/^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i', email)
+
+def validateUser(user):
+    if len(user) < 6:
+        return False
+    else:
+        return False
+    
+    return True
+
+def validateOAuthSignUp(user, email):
+    if validateEmail(email) == False or validateUser(user) == False:
+        return False
+
+    return True
+
+
+def validateSignUp(user, email, password):
+    if validateEmail(email) == False or validateUser(user) == False:
+        return False
+    
+    return True
+
+
 class AuthClass:
+    @limiter.limit()
     def on_post_facebook(self, req, resp):
         try:
             data = req.media
@@ -106,6 +131,9 @@ class AuthClass:
             newUser = User()
             newUser.email = data["email"]
             newUser.name = data["user"]
+
+            if validateOAuthSignUp(data['user'], data['email'], data['password']) == False:
+                 raise Exception('Datele de inregistrare sunt gresite.')
             newUser.is_facebook = True
 
             s = session()
@@ -134,6 +162,7 @@ class AuthClass:
             resp.body = str(e)
             resp.status = falcon.HTTP_500
 
+    @limiter.limit()
     def on_post_user_icon(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -166,6 +195,7 @@ class AuthClass:
             resp.body = json.dumps({'message': e.message})
             resp.status = falcon.HTTP_500
 
+    @limiter.limit()
     def on_get_user_icon(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -181,10 +211,15 @@ class AuthClass:
             resp.body = json.dumps({'message': e.message})
             resp.status = falcon.HTTP_500
 
+    @limiter.limit()
     def on_post_sign_up(self, req, resp):
         try:
             data = req.media
             user = User()
+
+            if validateSignUp(data['user'], data['email'], data['password']) == False:
+                 raise Exception('Datele de inregistrare sunt gresite.')
+
             user.name = data['user']
             user.email = data['email']
 
@@ -219,6 +254,7 @@ class AuthClass:
             resp.body = json.dumps({'message': e.message})
             resp.status = falcon.HTTP_500
 
+    @limiter.limit()
     def on_get_persistent(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -247,6 +283,7 @@ class AuthClass:
         except(Exception) as e:
             logger.error("Auth error")
 
+    @limiter.limit(deduct_when=lambda req, resp, resource, req_succeeded: resp.status != falcon.HTTP_500)
     def on_get(self, req, resp):
         try:
             auth_exp = req.auth.split(
@@ -294,6 +331,7 @@ class AuthClass:
 
 
 class CommentClass:
+    @limiter.limit()
     def on_get(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -330,6 +368,7 @@ class CommentClass:
             resp.body = 'Comment can not be retrieved.'
             resp.status = falcon.HTTP_400
 
+    @limiter.limit()
     def on_post_rate(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -361,6 +400,7 @@ class CommentClass:
             logger.error("Comment rate: " + str(e))
             resp.status = falcon.HTTP_400
 
+    @limiter.limit()
     def on_post(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -392,6 +432,7 @@ class CommentClass:
 
 
 class RouteClass():
+    @limiter.limit()
     def on_post(self, req, resp):
         try:
             auth = verify_token(req.auth)
@@ -440,6 +481,7 @@ class RouteClass():
             resp.body = 'Failed'
             resp.status = falcon.HTTP_400
 
+    @limiter.limit()
     def on_get(self, req, resp):
         try:
             verify_token(req.auth)
@@ -463,7 +505,7 @@ class RouteClass():
             logger.error('Route get: ' + str(e))
 
 
-app = falcon.API(middleware=[MultipartMiddleware()])
+app = falcon.API(middleware=[MultipartMiddleware(), limiter.middleware])
 app.add_route('/auth', AuthClass())
 app.add_route('/auth/persistent', AuthClass(), suffix='persistent')
 app.add_route('/auth/user_icon', AuthClass(), suffix='user_icon')
