@@ -98,15 +98,18 @@ def initialize():
 initialize()
 
 def validateEmail(email):
-    return re.search(r'/^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i', email)
+    if re.search(r'/^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i', email):
+        return True
+    else:
+        raise Exception('Email-ul nu este valid.')
 
 def validateUser(user):
-    if len(user) < 6:
-        return False
+    if len(user) < 4:
+        raise Exception('Numele de utilizator nu poate fi mai scurt de 4 caractere.')
+    if re.search(r'\b\s+\b', user):
+        raise Exception('Numele de utilizator nu poate contine spatii sau caractere speciale.')
     else:
-        return False
-    
-    return True
+        return True
 
 def validateOAuthSignUp(user, email):
     if validateEmail(email) == False or validateUser(user) == False:
@@ -129,11 +132,10 @@ class AuthClass:
             data = req.media
 
             newUser = User()
-            newUser.email = data["email"]
-            newUser.name = data["user"]
+            newUser.email = data["email"].strip()
+            newUser.name = data["user"].strip()
 
-            if validateOAuthSignUp(data['user'], data['email'], data['password']) == False:
-                 raise Exception('Datele de inregistrare sunt gresite.')
+            validateOAuthSignUp(newUser.name, newUser.email, data['password'])
             newUser.is_facebook = True
 
             s = session()
@@ -216,12 +218,10 @@ class AuthClass:
         try:
             data = req.media
             user = User()
+            user.name = data['user'].strip()
+            user.email = data['email'].strip()
 
-            if validateSignUp(data['user'], data['email'], data['password']) == False:
-                 raise Exception('Datele de inregistrare sunt gresite.')
-
-            user.name = data['user']
-            user.email = data['email']
+            validateSignUp(user.name, user.email, data['password'])
 
             hashedPassword = bcrypt.hashpw(
                 data['password'].encode('utf-8'), bcrypt.gensalt())
@@ -443,6 +443,7 @@ class RouteClass():
             rating = int(data["rating"])
 
             routeRating = UserRatedRoute()
+            routeRating.rating = rating
             routeRating.user_id = auth["user_id"]
             routeRating.route_id = route_id
 
@@ -451,11 +452,21 @@ class RouteClass():
             dbRouteRating = s.query(UserRatedRoute).filter(
                 UserRatedRoute.user_id == auth["user_id"]).filter(UserRatedRoute.route_id == route_id).first()
 
-            if dbRouteRating is not None:
-                raise falcon.HTTPBadRequest(title="User already voted", description="User" +
-                                            str(auth["user_id"]) + " already voted for route: " + str(data["route_id"]))
-
             route = s.query(Route).filter(Route.id == route_id).first()
+
+            if dbRouteRating is not None:
+                dbRouteRating.rating = rating
+                if rating == 1:
+                    route.one_star -= 1
+                if rating == 2:
+                    route.two_star -= 1
+                if rating == 3:
+                    route.three_star -= 1
+                if rating == 4:
+                    route.four_star -= 1
+                if rating == 5:
+                    route.five_star -= 1
+
             if rating == 1:
                 route.one_star += 1
             if rating == 2:
@@ -484,13 +495,18 @@ class RouteClass():
     @limiter.limit()
     def on_get(self, req, resp):
         try:
-            verify_token(req.auth)
+            auth = verify_token(req.auth)
 
             data = req.params
             route_id = int(data["route_id"])
             comment_count = 0
 
             s = session()
+
+            
+            dbRouteRating = s.query(UserRatedRoute).filter(
+                UserRatedRoute.user_id == auth["user_id"]).filter(UserRatedRoute.route_id == route_id).first()
+
             route = s.query(Route).filter(Route.id == route_id).first()
             ratingCount = route.one_star + route.two_star + route.three_star + route.four_star + route.five_star
             comment_count = s.query(Comment).filter(Comment.route_id == route_id).count()
@@ -498,7 +514,7 @@ class RouteClass():
 
             resp.status = falcon.HTTP_200
             resp.body = json.dumps(
-                {"route": route.name, "rating": route.rating, "rating_count": ratingCount, "commentCount": comment_count})
+                {"route": route.name, "rating": route.rating, "rating_count": ratingCount, "commentCount": comment_count, "user_rating": dbRouteRating.rating})
         except(Exception) as e:
             resp.status = falcon.HTTP_400
             resp.body = 'Failed'
