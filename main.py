@@ -98,15 +98,18 @@ def initialize():
 initialize()
 
 def validateEmail(email):
-    if re.search(r'/^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i', email):
+    regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    let = re.match(regex, email)
+    if re.match(regex, email):
         return True
     else:
         raise Exception('Email-ul nu este valid.')
 
 def validateUser(user):
+    regex = r'\b\s+\b'
     if len(user) < 4:
         raise Exception('Numele de utilizator nu poate fi mai scurt de 4 caractere.')
-    if re.search(r'\b\s+\b', user):
+    if re.match(regex, user):
         raise Exception('Numele de utilizator nu poate contine spatii sau caractere speciale.')
     else:
         return True
@@ -152,7 +155,7 @@ class AuthClass:
 
             s.add(newUser)
             s.commit()
-            token = generate_user_token(newUser) if platform == 'win32' else generate_user_token(newUser).decode('utf-8')
+            token = generate_user_token(newUser)
             id = newUser.id
             s.close()
 
@@ -239,7 +242,7 @@ class AuthClass:
 
                 s.add(user)
                 s.commit()
-                token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
+                token = generate_user_token(user)
                 id = user.id
                 s.close()
 
@@ -276,7 +279,7 @@ class AuthClass:
                 for comment in user.rated_comments:
                     rated_comments.append(comment.id)
 
-                token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
+                token = generate_user_token(user)
                 resp.body = json.dumps(
                     {'token': token, 'id': user.id, 'email': email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
                 resp.status = falcon.HTTP_200 
@@ -316,7 +319,7 @@ class AuthClass:
                     for comment in user.rated_comments:
                         rated_comments.append(comment.id)
 
-                    token = generate_user_token(user) if platform == 'win32' else generate_user_token(user).decode('utf-8')
+                    token = generate_user_token(user)
                     resp.body = json.dumps(
                         {'token': token, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
                     resp.status = falcon.HTTP_202  # 202 = Accepted
@@ -514,7 +517,7 @@ class RouteClass():
 
             resp.status = falcon.HTTP_200
             resp.body = json.dumps(
-                {"route": route.name, "rating": route.rating, "rating_count": ratingCount, "commentCount": comment_count, "user_rating": dbRouteRating.rating})
+                {"route": route.name, "rating": route.rating, "rating_count": ratingCount, "commentCount": comment_count, "user_rating": dbRouteRating.rating if dbRouteRating is not None else 0})
         except(Exception) as e:
             resp.status = falcon.HTTP_400
             resp.body = 'Failed'
