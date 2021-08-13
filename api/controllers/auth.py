@@ -1,0 +1,264 @@
+from falcon.status_codes import HTTP_200, HTTP_400
+import bcrypt, datetime, json, re, falcon, os, base64, zipfile
+from sys import platform
+from falcon_limiter.utils import get_remote_addr
+
+
+from api import logger, session, limiter, generate_user_token, generate_guest_token, verify_token
+from api.models import User
+
+def validateEmail(email):
+    regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    let = re.match(regex, email)
+    if re.match(regex, email):
+        return True
+    else:
+        raise Exception('Email-ul nu este valid.')
+
+def validateUser(user):
+    regex = r'\b\s+\b'
+    if len(user) < 4:
+        raise Exception('Numele de utilizator nu poate fi mai scurt de 4 caractere.')
+    if re.match(regex, user):
+        raise Exception('Numele de utilizator nu poate contine spatii sau caractere speciale.')
+    else:
+        return True
+
+def validateOAuthSignUp(user, email):
+    if validateEmail(email) == False or validateUser(user) == False:
+        return False
+
+    return True
+
+
+def validateSignUp(user, email, password):
+    if validateEmail(email) == False or validateUser(user) == False:
+        return False
+    
+    return True
+
+class AuthClass:
+    @limiter.limit()
+    def on_post_facebook(self, req, resp):
+        try:
+            data = req.media
+
+            newUser = User()
+            newUser.email = data["email"].strip()
+            newUser.name = data["user"].strip()
+
+            validateOAuthSignUp(newUser.name, newUser.email, data['password'])
+            newUser.is_facebook = True
+
+            s = session()
+
+            expToken = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            timeStamp = str(int(expToken.timestamp()))
+            hashedPassword = bcrypt.hashpw(timeStamp.encode('utf-8'), bcrypt.gensalt())
+            newUser.password = hashedPassword.decode('ascii')
+
+            existingUser = s.query(User).filter(User.name == newUser.name).first()
+            if existingUser is not None:
+                raise Exception('Exista deja un cont cu acest nume.')
+
+
+            s.add(newUser)
+            s.commit()
+            token = generate_user_token(newUser)
+            id = newUser.id
+            s.close()
+
+            resp.status = HTTP_200
+            resp.body = json.dumps({"token": token, "user_id": id, "roles": "rw"})
+
+        except(Exception) as e:
+            logger.error("")
+            resp.body = str(e)
+            resp.status = falcon.HTTP_500
+
+    @limiter.limit()
+    def on_post_user_icon(self, req, resp):
+        try:
+            auth = verify_token(req.auth)
+
+            chunk_size = 4096
+            image = req.get_param('file')
+
+            if req.content_length < 5000:
+                image_path = os.path.join('images', image.filename)
+            else:
+                image_path = os.path.join('profile_images', image.filename)
+
+            with open(image_path, 'wb') as image_file:
+                while True:
+                    chunk = image.file.read(chunk_size)
+                    if not chunk:
+                        break
+
+                    image_file.write(chunk)
+
+            s = session()
+            user = s.query(User).filter(User.id == auth["user_id"]).first()
+            user.icon = image.filename
+            s.commit()
+
+            resp.status = falcon.HTTP_200
+            
+        except(Exception) as e:
+            logger.error("User Icon Post: " + str(e))
+            resp.body = json.dumps({'message': e.message})
+            resp.status = falcon.HTTP_500
+
+    @limiter.limit()
+    def on_get_user_icon(self, req, resp):
+        try:
+            auth = verify_token(req.auth)
+            data = req.params
+
+            path = os.path.join("images", data["imagename"])
+            file_len = os.path.getsize(path)
+            resp.content_type = "image/jpg"
+            resp.set_stream(open(path, 'rb'), file_len)
+                
+        except(Exception) as e:
+            logger.error("User Icon Get: " + str(e))
+            resp.body = json.dumps({'message': e.message})
+            resp.status = falcon.HTTP_500
+
+    @limiter.limit()
+    def on_get_icons_zip(self, req, resp):
+        try:
+            #auth = verify_token(req.auth)
+            #data = req.params
+
+            files = ['hope.jpg', 'hope1.jpg', 'hope2.jpg']
+
+            with zipfile.ZipFile('icons.zip', 'w') as zipF:
+                for f in files:
+                    zipF.write('images/' + f, compress_type=zipfile.ZIP_DEFLATED)
+                    #path = os.path.join("images", data["imagename"])
+
+            file_len = os.path.getsize('icons.zip')
+            resp.content_type = "multipart/form-data"
+            resp.set_stream(open('icons.zip', 'rb'), file_len)
+                
+        except(Exception) as e:
+            logger.error("User Icon Get: " + str(e))
+            resp.body = json.dumps({'message': e.message})
+            resp.status = falcon.HTTP_500
+
+    @limiter.limit()
+    def on_post_sign_up(self, req, resp):
+        try:
+            data = req.media
+            user = User()
+            user.name = data['user'].strip()
+            user.email = data['email'].strip()
+
+            validateSignUp(user.name, user.email, data['password'])
+
+            hashedPassword = bcrypt.hashpw(
+                data['password'].encode('utf-8'), bcrypt.gensalt())
+            user.password = hashedPassword.decode('ascii')
+
+            try:
+                s = session()
+                existingEmail = s.query(User).filter(User.email == user.email).first()
+                if existingEmail is not None:
+                    raise Exception('Exista deja un cont cu acest email.')
+                
+                existingUser = s.query(User).filter(User.name == user.name).first()
+                if existingUser is not None:
+                    raise Exception('Exista deja un cont cu acest nume.')
+
+                s.add(user)
+                s.commit()
+                token = generate_user_token(user)
+                id = user.id
+                s.close()
+
+                resp.body = json.dumps({"token": token, "user_id": id, "roles": 'rw'})
+                resp.status = falcon.HTTP_201  # 201 = CREATED
+            except(Exception) as e:
+                resp.body = str(e)
+                resp.status = falcon.HTTP_400
+
+        except(Exception) as e:
+            logger.error("Auth Post: " + str(e))
+            resp.body = json.dumps({'message': e.message})
+            resp.status = falcon.HTTP_500
+
+    @limiter.limit()
+    def on_get_persistent(self, req, resp):
+        try:
+            auth = verify_token(req.auth)
+            email = auth["user"]
+
+            s = session()
+            user = s.query(User).filter(User.email == email).first()
+            s.close()
+
+            if user == None:
+                resp.status = falcon.HTTP_401
+            else:
+                rated_routes = []
+                rated_comments = []
+
+                for route in user.rated_routes:
+                    rated_routes.append(route.id)
+
+                for comment in user.rated_comments:
+                    rated_comments.append(comment.id)
+
+                token = generate_user_token(user)
+                resp.body = json.dumps(
+                    {'token': token, 'id': user.id, 'email': email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
+                resp.status = falcon.HTTP_200 
+        except(Exception) as e:
+            logger.error("Auth error")
+
+    @limiter.limit(deduct_when=lambda req, resp, resource, req_succeeded: resp.status != falcon.HTTP_500)
+    def on_get(self, req, resp):
+        try:
+            auth_exp = req.auth.split(
+                ' ') if req.auth is not None else (None, None)
+
+            if auth_exp[0].lower() == 'basic':
+                auth = base64.b64decode(auth_exp[1]).decode('utf-8').split(':')
+
+                email = auth[0]
+                password = auth[1].encode('utf-8')
+
+                s = session()
+                user = s.query(User).filter(User.email == email).first()
+                s.close()
+
+                if user == None and email != 'GUEST':
+                    resp.body = 'Utilizatorul nu exista.'
+                    resp.status = falcon.HTTP_400
+                elif email == 'GUEST':
+                    token = generate_guest_token() if platform == 'win32' else generate_guest_token().decode('utf-8')
+                    resp.body = json.dumps({'token': token})
+                    resp.status = falcon.HTTP_202 
+                elif bcrypt.checkpw(password, user.password.encode('utf-8')) or user.is_facebook == True:
+                    rated_routes = []
+                    rated_comments = []
+
+                    for route in user.rated_routes:
+                        rated_routes.append(route.id)
+
+                    for comment in user.rated_comments:
+                        rated_comments.append(comment.id)
+
+                    token = generate_user_token(user)
+                    resp.body = json.dumps(
+                        {'token': token, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
+                    resp.status = falcon.HTTP_202  # 202 = Accepted
+                else:
+                    resp.body = 'Datele de autentificare sunt gresite.'
+                    resp.status = falcon.HTTP_400
+
+        except(Exception) as e:
+            logger.error("Auth get: " + str(e))
+            resp.body = 'Probleme la autentificare.'
+            resp.status = falcon.HTTP_400
