@@ -64,3 +64,10 @@ class Comment(base):
     rating = Column('rating', Integer)
     created_on = Column('created_on', DateTime)
     route_parent = relationship("Route", back_populates="comments")
+
+class SystemValue(base):
+    __tablename__ = "systemvalue"
+
+    id = Column('id', Integer, primary_key=True, autoincrement=True)
+    key = Column('key', String)
+    value = Column('value', String)

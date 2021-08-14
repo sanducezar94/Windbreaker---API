@@ -1,42 +1,20 @@
+from api.constants import CONSTANTS
 from falcon.status_codes import HTTP_200, HTTP_400
-import bcrypt, datetime, json, re, falcon, os, base64, zipfile
+import bcrypt, datetime, json, falcon, os, base64, zipfile
 from sys import platform
-from falcon_limiter.utils import get_remote_addr
 
 
 from api import logger, session, limiter, generate_user_token, generate_guest_token, verify_token
 from api.models import User
+from api.helpers.validators import validateOAuthSignUp, validateSignUp
+from api.helpers.oauth_validators import validateFacebookToken
 
-def validateEmail(email):
-    regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-    let = re.match(regex, email)
-    if re.match(regex, email):
-        return True
-    else:
-        raise Exception('Email-ul nu este valid.')
-
-def validateUser(user):
-    regex = r'\b\s+\b'
-    if len(user) < 4:
-        raise Exception('Numele de utilizator nu poate fi mai scurt de 4 caractere.')
-    if re.match(regex, user):
-        raise Exception('Numele de utilizator nu poate contine spatii sau caractere speciale.')
-    else:
-        return True
-
-def validateOAuthSignUp(user, email):
-    if validateEmail(email) == False or validateUser(user) == False:
+def checkUserAndPassword(user, password, oauth_validated):
+    if user == None: 
         return False
-
-    return True
-
-
-def validateSignUp(user, email, password):
-    if validateEmail(email) == False or validateUser(user) == False:
-        return False
-    
-    return True
-
+    if bcrypt.checkpw(password, user.password.encode('utf-8')) or (user.is_facebook == True and oauth_validated == True):
+        return True
+    return False
 class AuthClass:
     @limiter.limit()
     def on_post_facebook(self, req, resp):
@@ -46,8 +24,10 @@ class AuthClass:
             newUser = User()
             newUser.email = data["email"].strip()
             newUser.name = data["user"].strip()
+            userToken = data["user_token"].strip()
 
-            validateOAuthSignUp(newUser.name, newUser.email, data['password'])
+            validateOAuthSignUp(newUser.name, newUser.email)
+            validateFacebookToken(userToken)
             newUser.is_facebook = True
 
             s = session()
@@ -213,7 +193,7 @@ class AuthClass:
                 token = generate_user_token(user)
                 resp.body = json.dumps(
                     {'token': token, 'id': user.id, 'email': email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
-                resp.status = falcon.HTTP_200 
+                resp.status = falcon.HTTP_200
         except(Exception) as e:
             logger.error("Auth error")
 
@@ -225,7 +205,6 @@ class AuthClass:
 
             if auth_exp[0].lower() == 'basic':
                 auth = base64.b64decode(auth_exp[1]).decode('utf-8').split(':')
-
                 email = auth[0]
                 password = auth[1].encode('utf-8')
 
@@ -233,14 +212,7 @@ class AuthClass:
                 user = s.query(User).filter(User.email == email).first()
                 s.close()
 
-                if user == None and email != 'GUEST':
-                    resp.body = 'Utilizatorul nu exista.'
-                    resp.status = falcon.HTTP_400
-                elif email == 'GUEST':
-                    token = generate_guest_token() if platform == 'win32' else generate_guest_token().decode('utf-8')
-                    resp.body = json.dumps({'token': token})
-                    resp.status = falcon.HTTP_202 
-                elif bcrypt.checkpw(password, user.password.encode('utf-8')) or user.is_facebook == True:
+                if checkUserAndPassword(user, password, False) == True:
                     rated_routes = []
                     rated_comments = []
 
@@ -253,12 +225,53 @@ class AuthClass:
                     token = generate_user_token(user)
                     resp.body = json.dumps(
                         {'token': token, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
-                    resp.status = falcon.HTTP_202  # 202 = Accepted
+                    resp.status = falcon.HTTP_200  # 202 = Accepted
                 else:
-                    resp.body = 'Datele de autentificare sunt gresite.'
-                    resp.status = falcon.HTTP_400
+                    raise Exception('Email sau parola incorectă.')
+
+    @limiter.limit(deduct_when=lambda req, resp, resource, req_succeeded: resp.status != falcon.HTTP_500)
+    def on_get(self, req, resp):
+        try:
+            auth_exp = req.auth.split(
+                ' ') if req.auth is not None else (None, None)
+
+            if auth_exp[0].lower() == 'basic':
+                auth = base64.b64decode(auth_exp[1]).decode('utf-8').split(':')
+                email = auth[0]
+                password = auth[1].encode('utf-8')
+
+                data = req.media            
+                if data is not None:
+                    token = data["oauth_token"]
+                    oauth_validated = validateFacebookToken(token, 0)
+                    if oauth_validated == False:
+                        raise Exception('Conexiunea nu a putut fi realizata')
+                else:
+                    raise Exception('Conexiunea nu a putut fi realizata')
+
+                s = session()
+                user = s.query(User).filter(User.email == email).first()
+                s.close()
+
+                if checkUserAndPassword(user, password, False) == True:
+                    rated_routes = []
+                    rated_comments = []
+
+                    for route in user.rated_routes:
+                        rated_routes.append(route.id)
+
+                    for comment in user.rated_comments:
+                        rated_comments.append(comment.id)
+
+                    token = generate_user_token(user)
+                    resp.body = json.dumps(
+                        {'token': token, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
+                    resp.status = falcon.HTTP_200  # 202 = Accepted
+                else:
+                    raise Exception('Email sau parola incorectă.')
+
 
         except(Exception) as e:
             logger.error("Auth get: " + str(e))
-            resp.body = 'Probleme la autentificare.'
+            resp.body = str(e)
             resp.status = falcon.HTTP_400
