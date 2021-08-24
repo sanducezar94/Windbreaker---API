@@ -1,0 +1,44 @@
+[
+    {
+        "id": 1,
+        "lat": 46.5682162728924,
+        "lng": 27.7077453623176,
+        "text": "Biserica de lemn Lipovat"
+    },
+    {
+        "id": 2,
+        "lat": 46.4561284127111,
+        "lng": 27.7144291704649,
+        "text": "Biserica de lemn Bogdanesti"
+    },
+    {
+        "id": 3,
+        "lat": 46.5191305177609,
+        "lng": 27.6011045246459,
+        "text": "Bserica de lemn Similisoara"
+    },
+    {
+        "id": 4,
+        "lat": 46.45632051062,
+        "lng": 27.6702968413054,
+        "text": "Biserica de lemn Cartibasi"
+    },
+    {
+        "id": 5,
+        "lat": 46.4599989898948,
+        "lng": 27.6859751733199,
+        "text": "Ferma Ursu - Gradina Copiilor"
+    },
+    {
+        "id": 6,
+        "lat": 46.4592822492702,
+        "lng": 27.7079235086826,
+        "text": "Biserica de lemn Visinari"
+    },
+    {
+        "id": 7,
+        "lat": 46.5134998919183,
+        "lng": 27.7317226553079,
+        "text": "Manastirea Moreni"
+    }
+]

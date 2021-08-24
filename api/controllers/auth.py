@@ -24,12 +24,14 @@ def getLoginData():
         routeRows = con.execute("SELECT id, rating, rating_count FROM public.route")
 
         for obj in objectiveRows:
-            data['objectives'].append(obj)
+            data['objectives'].append({'id': obj['id'], 'rating': obj['rating'], 'rating_count': obj['rating_count']})
         
         for route in routeRows:
-            data['routes'].append(route)
+            data['routes'].append({'id': route['id'], 'rating': route['rating'], 'rating_count': route['rating_count']})
     
     return data
+
+getLoginData()
 
 class AuthClass:
     @limiter.limit()

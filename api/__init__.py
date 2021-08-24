@@ -1,7 +1,7 @@
 from falcon.status_codes import HTTP_200, HTTP_400
 from sqlalchemy import create_engine
 from sqlalchemy.sql.expression import desc
-from api.models import Route, base
+from api.models import Objective, Route, base
 from sqlalchemy.orm import sessionmaker
 import datetime, logging, json, jwt, falcon
 from sys import platform
@@ -91,7 +91,7 @@ def initialize():
         s = session()
         routeCount = s.query(Route).count()
         if routeCount == 0:
-            f = open('initial_data.json')
+            f = open('routes.json')
             jsonData = json.load(f)
 
             for data in jsonData:
@@ -99,6 +99,19 @@ def initialize():
                 newRoute.id = data["id"]
                 newRoute.name = data["name"]
                 s.add(newRoute)
+        s.commit()
+
+        objectiveCount = s.query(Objective).count()
+        if objectiveCount == 0:
+            f = open('objectives.json')
+            jsonData = json.load(f)
+
+            for data in jsonData:
+                newObjective = Objective()
+                newObjective.id = data["id"]
+                newObjective.name = data["id"]
+                s.add(newObjective)
+        
         s.commit()
         s.close()
     except(Exception) as e:
