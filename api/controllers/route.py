@@ -55,6 +55,7 @@ class RouteClass():
             newRating = (route.one_star + route.two_star * 2 + route.three_star * 3 + route.four_star * 4 + route.five_star *
                       5) / (route.one_star + route.two_star + route.three_star + route.four_star + route.five_star)
             route.rating = newRating
+            route.rating_count = route.one_star + route.two_star + route.three_star + route.four_star + route.five_star
 
             if dbRouteRating is None:
                 s.add(routeRating)

@@ -4,7 +4,7 @@ import bcrypt, datetime, json, falcon, os, base64, zipfile
 from sys import platform
 
 
-from api import logger, session, limiter, generate_user_token, generate_guest_token, verify_token
+from api import logger, client, session, limiter, generate_user_token, generate_guest_token, verify_token
 from api.models import User
 from api.helpers.validators import validateOAuthSignUp, validateSignUp
 from api.helpers.oauth_validators import validateFacebookToken
@@ -15,6 +15,22 @@ def checkUserAndPassword(user, password, oauth_validated):
     if bcrypt.checkpw(password, user.password.encode('utf-8')) or (user.is_facebook == True and oauth_validated == True):
         return True
     return False
+
+def getLoginData():
+    data = {'routes': [], 'objectives': []}
+
+    with client.connect() as con:
+        objectiveRows = con.execute("SELECT id, rating, rating_count FROM public.objective")
+        routeRows = con.execute("SELECT id, rating, rating_count FROM public.route")
+
+        for obj in objectiveRows:
+            data['objectives'].append(obj)
+        
+        for route in routeRows:
+            data['routes'].append(route)
+    
+    return data
+
 class AuthClass:
     @limiter.limit()
     def on_post_facebook(self, req, resp):
@@ -48,8 +64,10 @@ class AuthClass:
             id = newUser.id
             s.close()
 
+            loginData = getLoginData()
+
             resp.status = HTTP_200
-            resp.body = json.dumps({"token": token, "user_id": id, "roles": "rw"})
+            resp.body = json.dumps({"token": token, "login_data": json.dumps(loginData), "user_id": id, "roles": "rw"})
 
         except(Exception) as e:
             logger.error("")
@@ -157,7 +175,9 @@ class AuthClass:
                 id = user.id
                 s.close()
 
-                resp.body = json.dumps({"token": token, "user_id": id, "roles": 'rw'})
+                loginData = getLoginData()
+
+                resp.body = json.dumps({"token": token, "login_data": json.dumps(loginData), "user_id": id, "roles": 'rw'})
                 resp.status = falcon.HTTP_201  # 201 = CREATED
             except(Exception) as e:
                 resp.body = str(e)
@@ -181,18 +201,11 @@ class AuthClass:
             if user == None:
                 resp.status = falcon.HTTP_401
             else:
-                rated_routes = []
-                rated_comments = []
-
-                for route in user.rated_routes:
-                    rated_routes.append(route.id)
-
-                for comment in user.rated_comments:
-                    rated_comments.append(comment.id)
-
                 token = generate_user_token(user)
+                loginData = getLoginData()
+
                 resp.body = json.dumps(
-                    {'token': token, 'id': user.id, 'email': email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
+                    {'token': token, 'id': user.id, 'email': email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'login_data': json.dumps(loginData)})
                 resp.status = falcon.HTTP_200
         except(Exception) as e:
             logger.error("Auth error")
@@ -213,37 +226,37 @@ class AuthClass:
                 s.close()
 
                 if checkUserAndPassword(user, password, False) == True:
-                    rated_routes = []
-                    rated_comments = []
-
-                    for route in user.rated_routes:
-                        rated_routes.append(route.id)
-
-                    for comment in user.rated_comments:
-                        rated_comments.append(comment.id)
-
                     token = generate_user_token(user)
+                    loginData = getLoginData()
+
                     resp.body = json.dumps(
-                        {'token': token, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
+                        {'token': token, "login_data": loginData, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited})
                     resp.status = falcon.HTTP_200  # 202 = Accepted
                 else:
                     raise Exception('Email sau parola incorectă.')
 
+        except(Exception) as e:
+            logger.error("Auth get: " + str(e))
+            resp.body = str(e)
+            resp.status = falcon.HTTP_400
+
     @limiter.limit(deduct_when=lambda req, resp, resource, req_succeeded: resp.status != falcon.HTTP_500)
-    def on_get(self, req, resp):
+    def on_get_oauth(self, req, resp):
         try:
             auth_exp = req.auth.split(
                 ' ') if req.auth is not None else (None, None)
 
             if auth_exp[0].lower() == 'basic':
                 auth = base64.b64decode(auth_exp[1]).decode('utf-8').split(':')
-                email = auth[0]
-                password = auth[1].encode('utf-8')
-
-                data = req.media            
+                email, password = auth[0], auth[1].encode('utf-8')
+                oauth_validated, data = False, req.params
                 if data is not None:
-                    token = data["oauth_token"]
-                    oauth_validated = validateFacebookToken(token, 0)
+                    token, provider = data["oauth_token"], data["provider"]
+                    
+                    if provider == 'FACEBOOK':
+                        oauth_validated = validateFacebookToken(token, 0)
+                    else:
+                        oauth_validated = validateFacebookToken(token, 0)
                     if oauth_validated == False:
                         raise Exception('Conexiunea nu a putut fi realizata')
                 else:
@@ -253,19 +266,11 @@ class AuthClass:
                 user = s.query(User).filter(User.email == email).first()
                 s.close()
 
-                if checkUserAndPassword(user, password, False) == True:
-                    rated_routes = []
-                    rated_comments = []
-
-                    for route in user.rated_routes:
-                        rated_routes.append(route.id)
-
-                    for comment in user.rated_comments:
-                        rated_comments.append(comment.id)
-
+                if checkUserAndPassword(user, password, True) == True:
                     token = generate_user_token(user)
+                    loginData = getLoginData()
                     resp.body = json.dumps(
-                        {'token': token, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited, 'ratedRoutes': rated_routes, 'ratedComments': rated_comments})
+                        {'token': token, "login_data": loginData, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited})
                     resp.status = falcon.HTTP_200  # 202 = Accepted
                 else:
                     raise Exception('Email sau parola incorectă.')

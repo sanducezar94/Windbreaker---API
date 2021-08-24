@@ -2,8 +2,7 @@ from falcon.status_codes import HTTP_200, HTTP_400
 import datetime, json, falcon
 
 from api import logger, session, client, limiter, verify_token
-from api.models import UserRatedComment, Comment
-
+from api.models import Comment
 class CommentClass:
     @limiter.limit()
     def on_get(self, req, resp):
@@ -47,27 +46,6 @@ class CommentClass:
         try:
             auth = verify_token(req.auth)
             data = req.media
-
-            comment_id = int(data["comment_id"])
-
-            s = session()
-            commentRate = s.query(UserRatedComment).filter(
-                UserRatedComment.id == auth["id"]).first()
-
-            comment = s.query(Comment).filter(Comment.id == comment_id).first()
-
-            if commentRate is None:
-                comment.rating += 1
-                newCommentRate = UserRatedComment()
-                newCommentRate.user_id = auth["user_id"]
-                newCommentRate.comment_id = comment_id
-                s.add(newCommentRate)
-            else:
-                comment.rating -= 1
-
-            s.commit()
-            s.close()
-
             resp.status = falcon.HTTP_200
         except(Exception) as e:
             resp.body = 'Comentariul nu a putut fi postat.'

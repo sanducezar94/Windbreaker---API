@@ -110,15 +110,18 @@ initialize()
 from api.controllers.auth import AuthClass
 from api.controllers.comment import CommentClass
 from api.controllers.route import RouteClass
+from api.controllers.objective import ObjectiveClass
 
 
 app = falcon.API(middleware=[MultipartMiddleware(), limiter.middleware])
-app.add_route('/auth', AuthClass())
-app.add_route('/auth/persistent', AuthClass(), suffix='persistent')
-app.add_route('/auth/user_icon', AuthClass(), suffix='user_icon')
-app.add_route('/auth/icons_zip', AuthClass(), suffix='icons_zip')
-app.add_route('/auth/sign_up', AuthClass(), suffix='sign_up')
-app.add_route('/auth/facebook', AuthClass(), suffix='facebook')
-app.add_route('/comment', CommentClass())
-app.add_route('/comment/rate', CommentClass(), suffix='rate')
-app.add_route('/route', RouteClass())
+app.add_route('/api/fablebike/auth', AuthClass())
+app.add_route('/api/fablebike/auth/oauth', AuthClass(), suffix='oauth')
+app.add_route('/api/fablebike/auth/persistent', AuthClass(), suffix='persistent')
+app.add_route('/api/fablebike/auth/user_icon', AuthClass(), suffix='user_icon')
+app.add_route('/api/fablebike/auth/icons_zip', AuthClass(), suffix='icons_zip')
+app.add_route('/api/fablebike/auth/sign_up', AuthClass(), suffix='sign_up')
+app.add_route('/api/fablebike/auth/facebook', AuthClass(), suffix='facebook')
+app.add_route('/api/fablebike/comment', CommentClass())
+app.add_route('/api/fablebike/comment/rate', CommentClass(), suffix='rate')
+app.add_route('/api/fablebike/route', RouteClass())
+app.add_route('/api/fablebike/objective', ObjectiveClass())
