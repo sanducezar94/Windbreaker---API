@@ -31,8 +31,6 @@ def getLoginData():
     
     return data
 
-getLoginData()
-
 class AuthClass:
     @limiter.limit()
     def on_post_facebook(self, req, resp):

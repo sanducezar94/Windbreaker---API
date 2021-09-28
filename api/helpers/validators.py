@@ -7,7 +7,7 @@ def validateEmail(email):
     if re.match(regex, email):
         return True
     else:
-        raise Exception('Email-ul nu este valid.')
+        raise Exception('Adresa de email nu este valid.')
 
 def validateUser(user):
     regex = r'\b\s+\b'

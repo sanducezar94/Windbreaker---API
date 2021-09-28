@@ -77,19 +77,18 @@ class ObjectiveClass():
             data = req.params
             objective_id = int(data["objective_id"])
             s = session()
-
             
-            dbRouteRating = s.query(UserRatedObjective).filter(
-                UserRatedObjective.user_id == auth["user_id"]).filter(UserRatedObjective.objective_id == objective_id).first()
+            dbObjectiveRating = s.query(UserRatedObjective).filter(
+                UserRatedObjective.user_id == auth["user_id"] and UserRatedObjective.objective_id == objective_id).filter(UserRatedObjective.objective_id == objective_id).first()
 
             objective = s.query(Objective).filter(Objective.id == objective_id).first()
-            ratingCount = objective['rating_count']
+            ratingCount = objective.rating_count
             s.close()
 
             resp.status = falcon.HTTP_200
             resp.body = json.dumps(
-                {"objective": objective.name, "rating": objective.rating, "rating_count": ratingCount, "user_rating": dbRouteRating.rating if dbRouteRating is not None else 0})
+                {"objective": objective.name, "rating": objective.rating, "rating_count": ratingCount, "user_rating": dbObjectiveRating.rating if dbObjectiveRating is not None else 0})
         except(Exception) as e:
             resp.status = falcon.HTTP_400
             resp.body = 'Failed'
-            logger.error('Route get: ' + str(e))
+            logger.error('Objective get: ' + str(e))

@@ -79,3 +79,11 @@ class SystemValue(base):
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     key = Column('key', String)
     value = Column('value', String)
+
+class Otp(base):
+    __tablename__ = "otp"
+
+    id = Column('id', Integer, primary_key=True)
+    key = Column('key', String)
+    email = Column('email', String)
+    created_on = Column('created_on', DateTime)

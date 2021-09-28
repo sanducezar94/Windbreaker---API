@@ -124,6 +124,8 @@ from api.controllers.auth import AuthClass
 from api.controllers.comment import CommentClass
 from api.controllers.route import RouteClass
 from api.controllers.objective import ObjectiveClass
+from api.helpers.email_sender import send_otp
+send_otp('hopeslicer@gmail.com')
 
 
 app = falcon.API(middleware=[MultipartMiddleware(), limiter.middleware])
