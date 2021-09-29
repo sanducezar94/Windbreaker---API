@@ -124,13 +124,13 @@ from api.controllers.auth import AuthClass
 from api.controllers.comment import CommentClass
 from api.controllers.route import RouteClass
 from api.controllers.objective import ObjectiveClass
-from api.helpers.email_sender import send_otp
-send_otp('hopeslicer@gmail.com')
+from api.controllers.otp import OtpClass
 
 
 app = falcon.API(middleware=[MultipartMiddleware(), limiter.middleware])
 app.add_route('/api/fablebike/auth', AuthClass())
 app.add_route('/api/fablebike/auth/oauth', AuthClass(), suffix='oauth')
+app.add_route('/api/fablebike/auth/change_password', AuthClass(), suffix='change_password')
 app.add_route('/api/fablebike/auth/persistent', AuthClass(), suffix='persistent')
 app.add_route('/api/fablebike/auth/user_icon', AuthClass(), suffix='user_icon')
 app.add_route('/api/fablebike/auth/icons_zip', AuthClass(), suffix='icons_zip')
@@ -140,3 +140,4 @@ app.add_route('/api/fablebike/comment', CommentClass())
 app.add_route('/api/fablebike/comment/rate', CommentClass(), suffix='rate')
 app.add_route('/api/fablebike/route', RouteClass())
 app.add_route('/api/fablebike/objective', ObjectiveClass())
+app.add_route('/api/fablebike/otp', OtpClass())

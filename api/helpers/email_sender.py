@@ -42,8 +42,12 @@ def send_otp(email):
         otp.created_on = datetime.datetime.utcnow()
         s.add(otp)
         s.commit()
-    
-    return otp
+    else:
+        otp_check.email = email
+        otp_check.key = otp_code
+        otp_check.created_on = datetime.datetime.utcnow()
+        s.add(otp_check)
+        s.commit()
 
 
 def prepare_otp_message(receiver_email, otp):

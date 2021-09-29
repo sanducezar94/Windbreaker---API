@@ -240,6 +240,43 @@ class AuthClass:
             resp.body = str(e)
             resp.status = falcon.HTTP_400
 
+
+    @limiter.limit(deduct_when=lambda req, resp, resource, req_succeeded: resp.status != falcon.HTTP_500)
+    def on_post_change_password(self, req, resp):
+        try:
+            auth_exp = req.auth.split(' ') if req.auth is not None else (None, None)
+
+            if auth_exp[0].lower() == 'basic':
+                auth = base64.b64decode(auth_exp[1]).decode('utf-8').split(':')
+                email, password = auth[0], auth[1].encode('utf-8')
+
+                validateSignUp("validuser", email, password)
+
+                s = session()
+                user = s.query(User).filter(User.email == email).first()
+                s.close()
+
+                hashedPassword = bcrypt.hashpw(
+                    password.encode('utf-8'), bcrypt.gensalt())
+                user.password = hashedPassword.decode('ascii')
+
+                s.add(user)
+                s.commit()
+                token = generate_user_token(user)
+                id = user.id
+                s.close()
+
+                loginData = getLoginData()
+
+                resp.body = json.dumps({"token": token, "login_data": json.dumps(loginData), "user_id": id, "roles": 'rw'})
+                resp.status = falcon.HTTP_201  # 201 = CREATED
+
+        except(Exception) as e:
+            logger.error("Chande password: " + str(e))
+            resp.body = str(e)
+            resp.status = falcon.HTTP_400
+
+
     @limiter.limit(deduct_when=lambda req, resp, resource, req_succeeded: resp.status != falcon.HTTP_500)
     def on_get_oauth(self, req, resp):
         try:
