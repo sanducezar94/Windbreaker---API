@@ -1,6 +1,6 @@
-# Windbreaker - Offline cycling application
+# Windbreaker - RESTFUL API created with Python/Falcon
 
-Mobile application for Android & IOS which stores a collection of routes for offline use. The application makes use of locally stored pre-processed maps which offers the ability to calculate routes without using any third-party API's.
+Basic restful api which handles signup, otp, login, password recovery and data retrieval for Windbreaker App.
 
 
  
