@@ -19,6 +19,13 @@ class OtpClass:
             email = data['email']
             validateEmail(email)
 
+            s = session()
+            user = s.query(User).filter(User.email == email).first()
+            s.close()
+
+            if user is None:
+                 raise Exception('Nu exista niciun cont inregistrat cu acest email.')
+
             send_otp(email)
             time_now = datetime.datetime.utcnow()
             resp.body = json.dumps({'date_sent': str(time_now)})
