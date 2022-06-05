@@ -18,6 +18,16 @@ def validateUser(user):
     else:
         return True
 
+
+def validatePassword(password):
+    regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$'
+    if len(password) < 8:
+        raise Exception('Parola nu poate fi mai scurta de 8 caractere.')
+    if re.match(regex, password):
+        raise Exception('Parola trebuie sa contina minim 8 caractere, o cifra si o majuscula.')
+    else:
+        return True
+
 def validateOAuthSignUp(user, email):
     if validateEmail(email) == False or validateUser(user) == False:
         return False
@@ -26,7 +36,7 @@ def validateOAuthSignUp(user, email):
 
 
 def validateSignUp(user, email, password):
-    if validateEmail(email) == False or validateUser(user) == False:
+    if validateEmail(email) == False or validateUser(user) == False or validatePassword(password) == False:
         return False
     
     return True

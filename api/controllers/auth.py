@@ -233,7 +233,7 @@ class AuthClass:
                         {'token': token, "login_data": loginData, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited})
                     resp.status = falcon.HTTP_200  # 202 = Accepted
                 else:
-                    raise Exception('Email sau parola incorectă.')
+                    raise Exception('Email sau parola incorecta.')
 
         except(Exception) as e:
             logger.error("Auth get: " + str(e))
@@ -308,7 +308,7 @@ class AuthClass:
                         {'token': token, "login_data": loginData, "id": user.id, email: email, 'username': user.name, 'icon': user.icon, 'distanceTravelled': user.distance_travelled, 'finishedRoutes': user.routes_finished, 'objectivesVisited': user.objectives_visited})
                     resp.status = falcon.HTTP_200  # 202 = Accepted
                 else:
-                    raise Exception('Email sau parola incorectă.')
+                    raise Exception('Email sau parola incorecta.')
 
 
         except(Exception) as e:

@@ -1,44 +1,164 @@
 [
-    {
-        "id": 1,
-        "lat": 46.5682162728924,
-        "lng": 27.7077453623176,
-        "text": "Biserica de lemn Lipovat"
-    },
-    {
-        "id": 2,
-        "lat": 46.4561284127111,
-        "lng": 27.7144291704649,
-        "text": "Biserica de lemn Bogdanesti"
-    },
-    {
-        "id": 3,
-        "lat": 46.5191305177609,
-        "lng": 27.6011045246459,
-        "text": "Bserica de lemn Similisoara"
-    },
-    {
-        "id": 4,
-        "lat": 46.45632051062,
-        "lng": 27.6702968413054,
-        "text": "Biserica de lemn Cartibasi"
-    },
-    {
-        "id": 5,
-        "lat": 46.4599989898948,
-        "lng": 27.6859751733199,
-        "text": "Ferma Ursu - Gradina Copiilor"
-    },
-    {
-        "id": 6,
-        "lat": 46.4592822492702,
-        "lng": 27.7079235086826,
-        "text": "Biserica de lemn Visinari"
-    },
-    {
-        "id": 7,
-        "lat": 46.5134998919183,
-        "lng": 27.7317226553079,
-        "text": "Manastirea Moreni"
-    }
+  {
+    "id": 1,
+    "lat": 46.5724053,
+    "lng": 27.7536273,
+    "text": "Statuia lui Stefan Cel Mare",
+    "icon": "ruin",
+    "image": "stefan_cel_mare.jpg",
+    "description": "Lupta de la Vaslui – Podul Inalt La 10 ianurie 1475 s-a desfasurat celebra batalie de la Vaslui, mai cunoscuta ca fiind de la Podul Inalt, moldovenilor lui stefan cel Mare alaturandu-se secui, maghiari si polonezi, reusind o mare victorie impotriva trupelor otomane conduse de Soliman Pasa. Lupta a avut loc intr-un loc ales de stefan, o zona ingusta, mlastinoasa, in care numarul mare de turci nu se putea desfasura. Atacati din mai multe parti, otomanii au sfarsit prin a intra in panica si au ales sa fuga, lasand in urma mii de morti si aproximativ 100 de steaguri. Victoria obtinuta de domnitorul Moldovei a fost elogiata de cronicarii vremii si recunoscuta de marile curti ale Europei, papa de la Roma numindu-l pe stefan cel Mare, 'Atlet al credintei crestine'."
+  },
+  {
+    "id": 2,
+    "lat": 46.6211917,
+    "lng": 27.755808,
+    "text": "Pensiunea Everest",
+    "icon": "house",
+    "image": "pen_everest.jpg",
+    "description": "Pensiunea Everest, situata pe DN 24, la intrarea in comuna Muntenii de Jos, Capacitate cazare: 10 camere; Capacitate restaurant: 170 locuri si terasa, 20 locuri de cazare."
+  },
+  {
+    "id": 3,
+    "lat": 46.6226867,
+    "lng": 27.7533533,
+    "text": "Motel Livada",
+    "icon": "house",
+    "image": "motel_livada.jpg",
+    "description": "Motel Livada, situat pe DN 24, la intrarea in comuna Muntenii de Jos, Capacitate cazare: 18 camere; Capacitate restaurant: 80 locuri; Sala conferinta: 180 locuri Piscina, 36 locuri de cazare."
+  },
+  {
+    "id": 4,
+    "lat": 46.5251056,
+    "lng": 27.6767706,
+    "text": "Biserica Sfantul Nicolae",
+    "icon": "church",
+    "image": "sf_nicolae_lipovat.jpg",
+    "description": "Este situata pe culmea unui deal, in capatul satului Capusneni, avand o locatie, dar si o priveliste de o rara frumusete. Cu toate ca au mai bine de 200 de ani vechime, sunt foarte bine intretinute, atat biserica sau clopotnita, cat si cimitirul din vecinatate. Ctitorita la 1792-1798 de spatareasa Safta Bogdan (fiica logofatului Ioan Bogdan, vaduva spatarului Constantin Costache), ca biserica de schit pe mosia sa, Negomirestii, la obarsia paraului Horieta."
+  },
+  {
+    "id": 5,
+    "lat": 46.6002199,
+    "lng": 27.6543953,
+    "text": "Biserica Nasterii Maicii Domnului",
+    "icon": "church",
+    "image": "nastere_lipovat.jpg",
+    "description": "Biserica ctitorita in 1852-1855, de catre postelnicul Stefan Angheluta si sotia sa, Smaranda, in partea de nord a satului, la marginea padurii. Angheluta, din neam boieresc, primul primar al Vasluiului, mare filantrop, printre altele, ctitor al 'Bisericii Adormirea Maicii Domnului' din Bahnari – Vaslui (1860-1862) si miluitor al Bisericii de lemn 'Sf. Voievozi' din Tanacu (1826), a dorit sa faca acest asezamant pentru a fi biserica mosiei."
+  },
+  {
+    "id": 6,
+    "lat": 46.6003623,
+    "lng": 27.6138034,
+    "text": "Biserica Sfantul Gheorge",
+    "icon": "church",
+    "image": "gheorge_lipovat.jpg",
+    "description": ""
+  },
+  {
+    "id": 7,
+    "lat": 46.5135801,
+    "lng": 27.7341082,
+    "text": "Manastirea Moreni",
+    "icon": "church",
+    "image": "moreni.jpg",
+    "description": "Vechiul schit al lui Lupan se afla la sud de actuala manastire Moreni, construita la 1853 si care a fost restaurata in 1986, cu sprijinul enoriasilor din Moreni, Deleni, Dinga, Costesti si alte sate. Noua biserica a manastirii Moreni a fost construita in anii 1992-1996."
+  },
+  {
+    "id": 8,
+    "lat": 46.5931932,
+    "lng": 27.6688378,
+    "text": "Monumentul Eroilor Chitoc",
+    "icon": "ruin",
+    "image": "monument_chitoc.jpg",
+    "description": ""
+  },
+  {
+    "id": 9,
+    "lat": 46.4752709,
+    "lng": 27.7395612,
+    "text": "Manastirea Parvesti",
+    "icon": "church",
+    "image": "manastirea_parvesti.jpg",
+    "description": "Biserica de la Parvesti este reprezentativa pentru arhitectura populara de lemn, unica prin sistemul de boltire, tehnica de constructie, armonia volumelor, aflata interferenta dintre arta populara si cea culta prin decoratia fatadelor si modul de adaptare a arhitecturii de zid la cea de lemn,daca avem in vedere maniera in care mesterul popular a realizat sistemul de boltire. Lacasul de cult este pe plan triconc cu trei turle hexagonale pe naos, pronaos si altar, cu pridvor, la vest, initial deschis, astazi inchis, absidele laterale pe semicalota pe nervuri, iar despartirea dintre naos si pronaos este realizeaza cu ajutorul a patru stalpi despartitori; construit din barne orizontale incheiate in cheutoare dreapta, pe temelie din piatra de rau, astazi din ciment, acoperis in patru ape din sindrila, cu exceptia turlelor care au acoperis baroc din tabla in forma de solzi, iar fatadele sunt decorate cu denticuli sub cornisa."
+  },
+  {
+    "id": 10,
+    "lat": 46.4454497,
+    "lng": 27.8103554,
+    "text": "Podul Doamnei",
+    "icon": "ruin",
+    "image": "podul_doamnei.jpg",
+    "description": "Podul de la Chițcani. Pe vechiul drum care lega Rosiestii de soseaua Barlad-Vaslui (DN 24) la km 97, la 72 m est de sosea, pe vechiul drum se afla podul de piatra construit din porunca domnitorului Mihail Sturdza (1834-1849), inaugurat la 8 noiembrie 1841, potrivit celor doua inscripții in piatra, aflate de-o parte si de alta a balustradelor podului, atat in romana (cu alfabet chirilic), cat si in latina, cunoscut sub numele de Podul Doamnei."
+  },
+  {
+    "id": 11,
+    "lat": 46.426966,
+    "lng": 27.638956,
+    "text": "Alexandru Vlahuță - România Pitorească",
+    "icon": "ruin",
+    "image": "Alexandru_Vlahuta.png",
+    "description": "La 5 septembrie 1858, la Pătrășcani (care împreună cu Pleșeștii formează actualul sat Alexandru Vlahuță), s-a născut Alexandru, fiul lui Nicolae Vlahuță. A murit la 19 noiembrie 1919, la București. A urmat școala primară și liceul la Bârlad, între 1867 și 1878, susținând bacalaureatul la București, în 1879. A urmat timp de un an cursurile Facultății de Drept din București, pe care le-a părăsit, devenind institutor și apoi profesor la Târgoviște. În anii 1884 - 1893 a fost profesor la mai multe instituții de învățământ din București. În 1888 a fost revizor școlar pentru județele Prahova și Buzău. În 1905 s-a căsătorit, pentru a treia oară, cu Maria Gâlcă, fiica unui proprietar viticultor din Dragosloveni, în vechiul județ Râmnicu Sărat. În timpul Primului Război Mondial a locuit la Iași, apoi la Bârlad, unde era vizitat de tineri scriitori, printre care s-a aflat și Vasile Voiculescu. A avut o bogată activitate publicistică în presa vremii, relevantă fiind însă munca în redacția revistei Sămănătorul, Vlahuță fiind un promotor al mișcării sămănătoriste, de revalorizare a vieții idilice rurale, poezia sa fiind pătrunsă de această nostalgie. În proza sa un loc aparte îl ocupă romanul Dan.Patriotismul scriitorului se manifestă şi prin dragostea pentru frumuseţile şi bogăţiile patriei, descrise în volumul \"România pitorească\", rezultat al unei îndelungate călătorii prin ţară, despre care Dumitru Micu spune că este un \"atlas geografic comentat, traversat de o caldă iubire de țară\". Frumuseţea locurilor este comunicată cititorului cu o caldă însufleţire.\"Să trăieşti draga mea, şi să fii bună, – să fii bună pentru ca să poţi fi fericită. Cei răi nu pot fi fericiţi. Ei pot avea satisfacţii, plăceri, noroc chiar, dar fericire nu. Nu, pentru că mai întâi cei răi nu pot fi iubiţi, şi-al doilea... al doilea... de! Norocul şi celelalte <pere mălăieţe>, care se aseamănă cu el, vin de-afară, de la oameni, de la împrejurări asupra cărora n-ai nici o stăpânire şi nici o putere, pe când fericirea, adevărata fericire în tine răsare şi-n tine-nfloreşte şi leagă rod, când ţi-ai pregătit sufletul pentru ea. Şi pregătirea este o operă de fiecare clipă, – când pierzi răbdarea, împrăştii tot ce-ai înşirat şi iar trebuie să o iei de la început. De aceea şi vezi aşa de puţini oameni fericiţi... Atâţi cât merită...\" Al. Vlahuță – scrisoare către fiica sa."
+  },
+  {
+    "id": 12,
+    "lat": 46.520055,
+    "lng": 27.602905,
+    "text": "Biserica de lemn \"Schimbarea la Față\" Similișoara",
+    "icon": "church",
+    "image": "similisoara.png",
+    "description": "Denumire: Biserica de lemn și vălătuci „Schimbarea la Față”, sat Similișoara, comuna Bogdana \n cod LMI: VS-II-m-B-06879, Vaslui \n Anii de corespondență: 1921-1945. \n Iacov Antonovici. La 1856, în cătunul Similișoara din comuna Bogdana s-a născut Ioan Antonovici. Din cauza unei boli, a trebuit să urmeze clasa I la Bogdana și la Chițoc, în anii 1865-1868, iar celelalte clase primare la Școala publică nr. 1 din Bârlad, în anii 1869–1872. \n Episcopul Iacov Antonovici s-a remarcat printr-o activitate rodnică: a reînființat Seminarul din Huși în chiliile Episcopiei; a înființat unui muzeu arheologic și religios; a reorganizat „Buletinului Eparhiei Hușilor”. A fost ales membru al Societății istorice române (1901), membru al Societății geografice române, membru al Comisiei Monumentelor Istorice din județul Tutova (1914), membru al Societății Internaționale pentru studii istorice și sociologice din Paris și membru de onoare al Academiei Române (7 iunie 1919). \n Iacov Antonovici a desfășurat o bogată activitate științifică, remarcându-se ca un cercetător al istoriei locale: Geografia comunei Bogdana (1889), Istoria comunei Bogdana din plasa Simila, județul Tutova (1905); Frații Gheorghe și Neculai Roșca Codreanu, fundatorii liceului și școlii secundare-profesionale de fete din Bârlad (1908), Notițe istorice și tradiționale despre schitul Măgariu, jud. Tutova (1911), Documente Bârlădene, 5 volume. (1911-1926), primele două volume fiind premiate de Academia Română, Mănăstirea Florești din plasa Simila, județul. Tutova. \n Studiu istoric cu hărți și ilustrațiuni, urmat de documente, inscripții și însemnări (1916), Un dascăl ardelean la Bârlad, Ioan Popescu (1928); Documente ale fostelor schituri Orgoeștii, Bogdănița, Pârveștii, Cârțibașii și Mânzații din județul Tutova (1929) și numeroase studii și articole."
+  },
+  {
+    "id": 13,
+    "lat": 46.592987,
+    "lng": 27.599757,
+    "text": "Fântâna Blănarului - punct pitoresc",
+    "icon": "ruin",
+    "image": "blanarului.png",
+    "description": "Comuna Bogdana, veche așezare răzăşeasca, datează din sec al XV-lea, sub vechea denumire de Zvasteleşti. Aparținând de comuna Bogdana, satul Fântâna Blănarului, datează din 1830 dar păstrează tradiţii ale oamenilor liberi din aceste locuri. Pădurea, în comuna Bogdana, acoperă o suprafaţă de 1856 ha, ceea ce reprezintă aproape 37,5% din suprafaţa teritoriului administrativ. \n În satul Fântâna Blănarului, undeva între păduri, se află o porțiune întinsă pe aproximativ 40 ha de teren semănată cu lucernă. Acolo, dimineața la răsărit și seara la amurg apar cârduri de căprioare şi cerbi să pască din lucernă proaspătă. Iarna, datorită pădurilor dese apar cârduri de până la 30 de capete. \n Masculii au tendința de a fi mai mari și mai robuști, în comparație cu femelele. Masculul poartă denumirea de căprior, iar femela de căprioară sau ciută. Blana este diferită în funcție de sezon. Iarna, blana este mai deasă, mai lungă, dând animalului un aspect ciufulit, neîngrijit, având culoare cenușie sau maro-cenușiu. În timpul lunilor de vara, blana este mai scurtă și mai rară, având culoare maro sau castaniu aprins. Coada este foarte scurtă, de câtiva centimetri lungime. Capul este mic, mai mult lung decat lat. Botul, în general, este de aceeași culoare ca restul corpului, dar nasul este întotdeauna de culoare neagră. \n ot prin aceste locuri, pe deal, în punctul cel mai înalt din județ, la amurg și dimineața devreme, când e cerul foarte limpede se poate admira în toată speldoarea masivul Ceahlău."
+  },
+  {
+    "id": 14,
+    "lat": 46.584603,
+    "lng": 27.586473,
+    "text": "Biserica de lemn Lacu Babei",
+    "icon": "church",
+    "image": "similisoara.png",
+    "description": "La 5 septembrie 1858, la Pătrășcani (care împreună cu Pleșeștii formează actualul sat Alexandru Vlahuță), s-a născut Alexandru, fiul lui Nicolae Vlahuță. A murit la 19 noiembrie 1919, la București. A urmat școala primară și liceul la Bârlad, între 1867 și 1878, susținând bacalaureatul la București, în 1879. A urmat timp de un an cursurile Facultății de Drept din București, pe care le-a părăsit, devenind institutor și apoi profesor la Târgoviște. În anii 1884 - 1893 a fost profesor la mai multe instituții de învățământ din București. În 1888 a fost revizor școlar pentru județele Prahova și Buzău. În 1905 s-a căsătorit, pentru a treia oară, cu Maria Gâlcă, fiica unui proprietar viticultor din Dragosloveni, în vechiul județ Râmnicu Sărat. În timpul Primului Război Mondial a locuit la Iași, apoi la Bârlad, unde era vizitat de tineri scriitori, printre care s-a aflat și Vasile Voiculescu. A avut o bogată activitate publicistică în presa vremii, relevantă fiind însă munca în redacția revistei Sămănătorul, Vlahuță fiind un promotor al mișcării sămănătoriste, de revalorizare a vieții idilice rurale, poezia sa fiind pătrunsă de această nostalgie. În proza sa un loc aparte îl ocupă romanul Dan.Patriotismul scriitorului se manifestă şi prin dragostea pentru frumuseţile şi bogăţiile patriei, descrise în volumul \"România pitorească\", rezultat al unei îndelungate călătorii prin ţară, despre care Dumitru Micu spune că este un \"atlas geografic comentat, traversat de o caldă iubire de țară\". Frumuseţea locurilor este comunicată cititorului cu o caldă însufleţire.\"Să trăieşti draga mea, şi să fii bună, – să fii bună pentru ca să poţi fi fericită. Cei răi nu pot fi fericiţi. Ei pot avea satisfacţii, plăceri, noroc chiar, dar fericire nu. Nu, pentru că mai întâi cei răi nu pot fi iubiţi, şi-al doilea... al doilea... de! Norocul şi celelalte <pere mălăieţe>, care se aseamănă cu el, vin de-afară, de la oameni, de la împrejurări asupra cărora n-ai nici o stăpânire şi nici o putere, pe când fericirea, adevărata fericire în tine răsare şi-n tine-nfloreşte şi leagă rod, când ţi-ai pregătit sufletul pentru ea. Şi pregătirea este o operă de fiecare clipă, – când pierzi răbdarea, împrăştii tot ce-ai înşirat şi iar trebuie să o iei de la început. De aceea şi vezi aşa de puţini oameni fericiţi... Atâţi cât merită...\" Al. Vlahuță – scrisoare către fiica sa."
+  },
+  {
+    "id": 15,
+    "lat": 46.599843,
+    "lng": 27.542532,
+    "text": "Fântâna Popii - punct pitoresc",
+    "icon": "ruin",
+    "image": "similisoara.png",
+    "description": "La 5 septembrie 1858, la Pătrășcani (care împreună cu Pleșeștii formează actualul sat Alexandru Vlahuță), s-a născut Alexandru, fiul lui Nicolae Vlahuță. A murit la 19 noiembrie 1919, la București. A urmat școala primară și liceul la Bârlad, între 1867 și 1878, susținând bacalaureatul la București, în 1879. A urmat timp de un an cursurile Facultății de Drept din București, pe care le-a părăsit, devenind institutor și apoi profesor la Târgoviște. În anii 1884 - 1893 a fost profesor la mai multe instituții de învățământ din București. În 1888 a fost revizor școlar pentru județele Prahova și Buzău. În 1905 s-a căsătorit, pentru a treia oară, cu Maria Gâlcă, fiica unui proprietar viticultor din Dragosloveni, în vechiul județ Râmnicu Sărat. În timpul Primului Război Mondial a locuit la Iași, apoi la Bârlad, unde era vizitat de tineri scriitori, printre care s-a aflat și Vasile Voiculescu. A avut o bogată activitate publicistică în presa vremii, relevantă fiind însă munca în redacția revistei Sămănătorul, Vlahuță fiind un promotor al mișcării sămănătoriste, de revalorizare a vieții idilice rurale, poezia sa fiind pătrunsă de această nostalgie. În proza sa un loc aparte îl ocupă romanul Dan.Patriotismul scriitorului se manifestă şi prin dragostea pentru frumuseţile şi bogăţiile patriei, descrise în volumul \"România pitorească\", rezultat al unei îndelungate călătorii prin ţară, despre care Dumitru Micu spune că este un \"atlas geografic comentat, traversat de o caldă iubire de țară\". Frumuseţea locurilor este comunicată cititorului cu o caldă însufleţire.\"Să trăieşti draga mea, şi să fii bună, – să fii bună pentru ca să poţi fi fericită. Cei răi nu pot fi fericiţi. Ei pot avea satisfacţii, plăceri, noroc chiar, dar fericire nu. Nu, pentru că mai întâi cei răi nu pot fi iubiţi, şi-al doilea... al doilea... de! Norocul şi celelalte <pere mălăieţe>, care se aseamănă cu el, vin de-afară, de la oameni, de la împrejurări asupra cărora n-ai nici o stăpânire şi nici o putere, pe când fericirea, adevărata fericire în tine răsare şi-n tine-nfloreşte şi leagă rod, când ţi-ai pregătit sufletul pentru ea. Şi pregătirea este o operă de fiecare clipă, – când pierzi răbdarea, împrăştii tot ce-ai înşirat şi iar trebuie să o iei de la început. De aceea şi vezi aşa de puţini oameni fericiţi... Atâţi cât merită...\" Al. Vlahuță – scrisoare către fiica sa."
+  },
+  {
+    "id": 16,
+    "lat": 46.553666,
+    "lng": 27.541611,
+    "text": "Florești – punct pitoresc",
+    "icon": "forest",
+    "image": "similisoara.png",
+    "description": "La 5 septembrie 1858, la Pătrășcani (care împreună cu Pleșeștii formează actualul sat Alexandru Vlahuță), s-a născut Alexandru, fiul lui Nicolae Vlahuță. A murit la 19 noiembrie 1919, la București. A urmat școala primară și liceul la Bârlad, între 1867 și 1878, susținând bacalaureatul la București, în 1879. A urmat timp de un an cursurile Facultății de Drept din București, pe care le-a părăsit, devenind institutor și apoi profesor la Târgoviște. În anii 1884 - 1893 a fost profesor la mai multe instituții de învățământ din București. În 1888 a fost revizor școlar pentru județele Prahova și Buzău. În 1905 s-a căsătorit, pentru a treia oară, cu Maria Gâlcă, fiica unui proprietar viticultor din Dragosloveni, în vechiul județ Râmnicu Sărat. În timpul Primului Război Mondial a locuit la Iași, apoi la Bârlad, unde era vizitat de tineri scriitori, printre care s-a aflat și Vasile Voiculescu. A avut o bogată activitate publicistică în presa vremii, relevantă fiind însă munca în redacția revistei Sămănătorul, Vlahuță fiind un promotor al mișcării sămănătoriste, de revalorizare a vieții idilice rurale, poezia sa fiind pătrunsă de această nostalgie. În proza sa un loc aparte îl ocupă romanul Dan.Patriotismul scriitorului se manifestă şi prin dragostea pentru frumuseţile şi bogăţiile patriei, descrise în volumul \"România pitorească\", rezultat al unei îndelungate călătorii prin ţară, despre care Dumitru Micu spune că este un \"atlas geografic comentat, traversat de o caldă iubire de țară\". Frumuseţea locurilor este comunicată cititorului cu o caldă însufleţire.\"Să trăieşti draga mea, şi să fii bună, – să fii bună pentru ca să poţi fi fericită. Cei răi nu pot fi fericiţi. Ei pot avea satisfacţii, plăceri, noroc chiar, dar fericire nu. Nu, pentru că mai întâi cei răi nu pot fi iubiţi, şi-al doilea... al doilea... de! Norocul şi celelalte <pere mălăieţe>, care se aseamănă cu el, vin de-afară, de la oameni, de la împrejurări asupra cărora n-ai nici o stăpânire şi nici o putere, pe când fericirea, adevărata fericire în tine răsare şi-n tine-nfloreşte şi leagă rod, când ţi-ai pregătit sufletul pentru ea. Şi pregătirea este o operă de fiecare clipă, – când pierzi răbdarea, împrăştii tot ce-ai înşirat şi iar trebuie să o iei de la început. De aceea şi vezi aşa de puţini oameni fericiţi... Atâţi cât merită...\" Al. Vlahuță – scrisoare către fiica sa."
+  },
+  {
+    "id": 17,
+    "lat": 46.521021,
+    "lng": 27.56458,
+    "text": "Dealul Secării – punct pitoresc",
+    "icon": "forest",
+    "image": "similisoara.png",
+    "description": "La 5 septembrie 1858, la Pătrășcani (care împreună cu Pleșeștii formează actualul sat Alexandru Vlahuță), s-a născut Alexandru, fiul lui Nicolae Vlahuță. A murit la 19 noiembrie 1919, la București. A urmat școala primară și liceul la Bârlad, între 1867 și 1878, susținând bacalaureatul la București, în 1879. A urmat timp de un an cursurile Facultății de Drept din București, pe care le-a părăsit, devenind institutor și apoi profesor la Târgoviște. În anii 1884 - 1893 a fost profesor la mai multe instituții de învățământ din București. În 1888 a fost revizor școlar pentru județele Prahova și Buzău. În 1905 s-a căsătorit, pentru a treia oară, cu Maria Gâlcă, fiica unui proprietar viticultor din Dragosloveni, în vechiul județ Râmnicu Sărat. În timpul Primului Război Mondial a locuit la Iași, apoi la Bârlad, unde era vizitat de tineri scriitori, printre care s-a aflat și Vasile Voiculescu. A avut o bogată activitate publicistică în presa vremii, relevantă fiind însă munca în redacția revistei Sămănătorul, Vlahuță fiind un promotor al mișcării sămănătoriste, de revalorizare a vieții idilice rurale, poezia sa fiind pătrunsă de această nostalgie. În proza sa un loc aparte îl ocupă romanul Dan.Patriotismul scriitorului se manifestă şi prin dragostea pentru frumuseţile şi bogăţiile patriei, descrise în volumul \"România pitorească\", rezultat al unei îndelungate călătorii prin ţară, despre care Dumitru Micu spune că este un \"atlas geografic comentat, traversat de o caldă iubire de țară\". Frumuseţea locurilor este comunicată cititorului cu o caldă însufleţire.\"Să trăieşti draga mea, şi să fii bună, – să fii bună pentru ca să poţi fi fericită. Cei răi nu pot fi fericiţi. Ei pot avea satisfacţii, plăceri, noroc chiar, dar fericire nu. Nu, pentru că mai întâi cei răi nu pot fi iubiţi, şi-al doilea... al doilea... de! Norocul şi celelalte <pere mălăieţe>, care se aseamănă cu el, vin de-afară, de la oameni, de la împrejurări asupra cărora n-ai nici o stăpânire şi nici o putere, pe când fericirea, adevărata fericire în tine răsare şi-n tine-nfloreşte şi leagă rod, când ţi-ai pregătit sufletul pentru ea. Şi pregătirea este o operă de fiecare clipă, – când pierzi răbdarea, împrăştii tot ce-ai înşirat şi iar trebuie să o iei de la început. De aceea şi vezi aşa de puţini oameni fericiţi... Atâţi cât merită...\" Al. Vlahuță – scrisoare către fiica sa."
+  },
+  {
+    "id": 18,
+    "lat": 46.455416,
+    "lng": 27.620559,
+    "text": "Mănăstirea Alexandru Vlahuță",
+    "icon": "church",
+    "image": "manastirea_alexandru_vlahuta.png",
+    "description": "Mănăstirea din localitatea Alexandru Vlahuţă a fost ridicată pe un deal care străjuiește satul cu acelaşi nume şi are ca hram praznicul Nasterii Maicii Domnului. Mânăstirea „Nașterea Maicii Domnului” din comuna Alexandru Vlahuță reprezintă un frumos locaș de rugăciune unde din ce în ce mai multă lume iși găsește pacea și linistea sufletului, dar mai ales simte binecuvantarea lui Dumnezeu care izvorăște din frumusețea sfintelor slujbe și din sfatul duhovnicilor de aici. \n Lucrările de construcţie ale acesti mănăstiri au început în anul 2001, atunci când o fiică a satului Alexandru Vlahuţă, Rodica Colomei, a donat pământul pe care se află acum complexul monahal. Piatra de temelie a fost pusă în luna mai a anului 2002, în Duminica Tomii, de către PS Părinte Episcop Corneliu, pe atunci arhiereu vicar al eparhiei. \n În prezent, biserica mare este pictată integral în exterior doar cu Sfinţi români, fiind unică în ţară.  "
+  }
 ]
