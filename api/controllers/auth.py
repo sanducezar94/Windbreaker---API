@@ -159,34 +159,28 @@ class AuthClass:
                 data['password'].encode('utf-8'), bcrypt.gensalt())
             user.password = hashedPassword.decode('ascii')
 
-            try:
-                s = session()
-                existingEmail = s.query(User).filter(User.email == user.email).first()
-                if existingEmail is not None:
-                    raise Exception('Exista deja un cont cu acest email.')
+            s = session()
+            existingEmail = s.query(User).filter(User.email == user.email).first()
+            if existingEmail is not None:
+                raise Exception('Exista deja un cont cu acest email.')
                 
-                existingUser = s.query(User).filter(User.name == user.name).first()
-                if existingUser is not None:
-                    raise Exception('Exista deja un cont cu acest nume.')
+            existingUser = s.query(User).filter(User.name == user.name).first()
+            if existingUser is not None:
+                raise Exception('Exista deja un cont cu acest nume.')
 
-                s.add(user)
-                s.commit()
-                token = generate_user_token(user)
-                id = user.id
-                s.close()
+            s.add(user)
+            s.commit()
+            token = generate_user_token(user)
+            id = user.id
+            s.close()
 
-                loginData = getLoginData()
+            loginData = getLoginData()
 
-                resp.body = json.dumps({"token": token, "login_data": json.dumps(loginData), "user_id": id, "roles": 'rw'})
-                resp.status = falcon.HTTP_201  # 201 = CREATED
-            except(Exception) as e:
-                resp.body = str(e)
-                resp.status = falcon.HTTP_400
-
+            resp.body = json.dumps({"token": token, "login_data": json.dumps(loginData), "user_id": id, "roles": 'rw'})
+            resp.status = falcon.HTTP_201  # 201 = CREATED
         except(Exception) as e:
-            logger.error("Auth Post: " + str(e))
-            resp.body = json.dumps({'message': e.message})
-            resp.status = falcon.HTTP_500
+            resp.body = str(e)
+            resp.status = falcon.HTTP_400
 
     @limiter.limit()
     def on_get_persistent(self, req, resp):
