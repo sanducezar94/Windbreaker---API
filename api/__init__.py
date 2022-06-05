@@ -23,10 +23,10 @@ logger.addHandler(fh)
 
 limiter = Limiter(
     key_func=get_remote_addr,
-    default_limits="5 per minute, 4 per second"
+    default_limits="300 per minute, 4 per second"
 )
 
-host = 'localhost' if platform == 'win32' else 'localhost:5432'
+host = 'localhost' if platform == 'win32' else 'localhost:5432' 
 dbname = 'bikeroutes' if platform == 'win32' else 'fablebike'
 
 client = create_engine(
@@ -49,7 +49,6 @@ def verify_token(auth):
     except(Exception) as e:
         raise jwt.DecodeError()
 
-
 def verify_token(auth):
     auth_exp = auth.split(' ') if auth is not None else (None, None)
 
@@ -64,7 +63,6 @@ def verify_token(auth):
                 raise jwt.DecodeError()
     except(Exception) as e:
         raise jwt.DecodeError()
-
 
 def generate_user_token(user):
     expToken = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
@@ -119,15 +117,13 @@ def initialize():
 
 initialize()
 
-
 from api.controllers.auth import AuthClass
 from api.controllers.comment import CommentClass
 from api.controllers.route import RouteClass
 from api.controllers.objective import ObjectiveClass
 from api.controllers.otp import OtpClass
 
-
-app = falcon.API(middleware=[MultipartMiddleware(), limiter.middleware])
+app = falcon.App(middleware=[MultipartMiddleware(), limiter.middleware])
 app.add_route('/api/fablebike/auth', AuthClass())
 app.add_route('/api/fablebike/auth/oauth', AuthClass(), suffix='oauth')
 app.add_route('/api/fablebike/auth/change_password', AuthClass(), suffix='change_password')
