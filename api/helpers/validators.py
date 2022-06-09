@@ -24,7 +24,7 @@ def validatePassword(password):
     if len(password) < 8:
         raise Exception('Parola nu poate fi mai scurta de 8 caractere.')
     if re.match(regex, password):
-        raise Exception('Parola trebuie sa contina minim 8 caractere, o cifra si o majuscula.')
+        raise Exception('Cam proasta.')
     else:
         return True
 
