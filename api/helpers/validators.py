@@ -23,8 +23,6 @@ def validatePassword(password):
     regex = r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$'
     if len(password) < 8:
         raise Exception('Parola nu poate fi mai scurta de 8 caractere.')
-    if re.match(regex, password):
-        raise Exception('Cam proasta.')
     else:
         return True
 
